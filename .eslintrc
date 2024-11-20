@@ -1,0 +1,30 @@
+{
+  "root": true,
+  "extends": [
+    "universe/node",
+    "universe/shared/typescript-analysis",
+    "plugin:@next/next/recommended"
+  ],
+  "rules": {
+    "handle-callback-err": "off",
+    "import/order": "off",
+    "@typescript-eslint/no-unused-vars": "error",
+    "@typescript-eslint/prefer-nullish-coalescing": "off"
+  },
+  "overrides": [
+    {
+      "files": [
+        "*.ts",
+        "*.tsx",
+        "*.d.ts"
+      ],
+      "parserOptions": {
+        "project": "./tsconfig.json"
+      },
+      "rules": {
+        "no-unused-vars": "off",
+        "no-undef": "off"
+      }
+    }
+  ]
+}

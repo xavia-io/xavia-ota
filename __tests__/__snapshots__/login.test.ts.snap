@@ -1,0 +1,25 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Login API should return 200 for correct password 1`] = `
+Object {
+  "success": true,
+}
+`;
+
+exports[`Login API should return 401 for invalid password 1`] = `
+Object {
+  "error": "Invalid password",
+}
+`;
+
+exports[`Login API should return 405 for non-POST requests 1`] = `
+Object {
+  "error": "Method not allowed",
+}
+`;
+
+exports[`Login API should return 500 if admin password is not configured 1`] = `
+Object {
+  "error": "Admin password not configured",
+}
+`;

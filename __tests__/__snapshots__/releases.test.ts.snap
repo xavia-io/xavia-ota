@@ -1,0 +1,27 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Releases API should handle errors gracefully 1`] = `
+Object {
+  "error": "Failed to fetch releases",
+}
+`;
+
+exports[`Releases API should return 405 for non-GET requests 1`] = `
+Object {
+  "error": "Method not allowed",
+}
+`;
+
+exports[`Releases API should return releases successfully 1`] = `
+Object {
+  "releases": Array [
+    Object {
+      "commitHash": "abc123",
+      "path": "updates/1.0.0/update.zip",
+      "runtimeVersion": "1.0.0",
+      "size": 1000,
+      "timestamp": "2024-03-20T00:00:00Z",
+    },
+  ],
+}
+`;
