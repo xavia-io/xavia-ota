@@ -70,6 +70,8 @@ The easiest way to deploy Xavia OTA is using our public Docker image. The image 
 
     ` docker run -d -p 3000:3000 xaviaio/xavia-ota -e HOST=http://localhost:3000 ...`
 
+### Load test your deployment setup
+Check [this](./docs/laod_testing.md) on how to run load testing for your OTA server in your deployment infrastructure.
 
 ## Local Development
 
