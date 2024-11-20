@@ -39,3 +39,6 @@ yarn-error.log*
 /local-releases
 /scripts/prod
 code-signing-keys
+
+# Husky
+.husky/_
