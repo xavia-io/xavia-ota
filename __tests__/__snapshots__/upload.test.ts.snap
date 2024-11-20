@@ -1,0 +1,20 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Upload API should handle file upload successfully 1`] = `
+Object {
+  "path": "updates/1.0.0/timestamp.zip",
+  "success": true,
+}
+`;
+
+exports[`Upload API should return 400 for missing required fields 1`] = `
+Object {
+  "error": "Missing file, runtime version, or commit hash",
+}
+`;
+
+exports[`Upload API should return 405 for non-POST requests 1`] = `
+Object {
+  "error": "Method not allowed",
+}
+`;

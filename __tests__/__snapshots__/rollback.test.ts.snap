@@ -1,0 +1,15 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Rollback API should handle rollback successfully 1`] = `"{\\"success\\":true,\\"newPath\\":\\"updates/1.0.0/20200513123337.zip\\"}"`;
+
+exports[`Rollback API should return 400 for missing required fields 1`] = `
+Object {
+  "error": "Missing path",
+}
+`;
+
+exports[`Rollback API should return 405 for non-POST requests 1`] = `
+Object {
+  "error": "Method not allowed",
+}
+`;

@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  xavia-ota:
+    image: xaviaio/xavia-ota:latest
+    ports:
+      - '3000:3000'
+    environment:
+      # Server Configuration
+      - HOST=http://localhost:3000
+
+      # Storage Configuration
+      - BLOB_STORAGE_TYPE=supabase
+      # For local storage use:
+      # - BLOB_STORAGE_TYPE=local
+
+      # Database Configuration
+      - DB_TYPE=supabase
+      # For postgres use:
+      # - DB_TYPE=postgres
+      # - POSTGRES_USER=postgres
+      # - POSTGRES_PASSWORD=postgres
+      # - POSTGRES_DB=releases_db
+      # - POSTGRES_HOST=localhost
+      # - POSTGRES_PORT=5432
+
+      # Security
+      - PRIVATE_KEY_BASE_64=your_base64_encoded_private_key
+      - ADMIN_PASSWORD=your_secure_admin_password
+
+      # Supabase Configuration
+      - SUPABASE_URL=your_supabase_project_url
+      - SUPABASE_API_KEY=your_supabase_service_role_key
+      - SUPABASE_BUCKET_NAME=your_bucket_name
+
+    # For local storage, uncomment to persist data
+    # volumes:
+    #   - ./storage:/data/storage
+
+    restart: unless-stopped

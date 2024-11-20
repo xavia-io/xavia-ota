@@ -1,0 +1,21 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Manifest API should handle normal update successfully 1`] = `""`;
+
+exports[`Manifest API should return 400 for invalid platform 1`] = `
+Object {
+  "error": "Unsupported platform. Expected either ios or android.",
+}
+`;
+
+exports[`Manifest API should return 400 for missing runtime version 1`] = `
+Object {
+  "error": "No runtimeVersion provided.",
+}
+`;
+
+exports[`Manifest API should return 405 for non-GET requests 1`] = `
+Object {
+  "error": "Expected GET.",
+}
+`;
