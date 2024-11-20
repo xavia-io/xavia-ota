@@ -5,7 +5,7 @@
 [![Docker Image Size](https://img.shields.io/docker/image-size/xaviaio/xavia-ota/latest)](https://hub.docker.com/r/xaviaio/xavia-ota)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A self-hosted Over-The-Air (OTA) updates server for Expo applications that gives you complete control over your app's update distribution. Built with Next.js and TypeScript, it implements the expo-updates protocol while providing additional features for enterprise use.
+A self-hosted Over-The-Air (OTA) updates server for Expo/RN applications that gives you complete control over your app's update distribution. Built with Next.js and TypeScript, it implements the expo-updates protocol while providing additional features for enterprise use.
 
 ## Table of Contents <!-- omit in toc -->
 
@@ -43,7 +43,7 @@ This system provides a robust OTA update infrastructure with these key component
 1. **Updates Server**: A Next.js application handling OTA update distribution.
 2. **Admin Dashboard**: Web interface for update management.
 3. **Blob Storage**: Flexible and extensible blob storage support.
-4. **Database Layer**: Supports PostgreSQL for tracking (no sensitive or personaldata is collected) and insights.
+4. **Database Layer**: Supports PostgreSQL for tracking (no sensitive or personal data is collected) and insights.
 
 ## Key Features
 
@@ -80,7 +80,7 @@ The easiest way to deploy Xavia OTA is using our public Docker image. The image 
    npm install
    ```
 
-2. Copy the example environment file and configure your variables:
+2. Copy the example local env file:
    ```bash
    cp .env.example.local .env.local
    ```
@@ -112,9 +112,9 @@ Refer to [Storage & Database Configuration](./docs/supportedStorageAlternatives.
 
 ## Code Signing 
 
-The code signing is done using a private key. The private key is used to sign the updates and is stored in the blob storage. The client uses a certificate to verify the signature of the update.
+The code signing is done using a private key. The private key is used to sign the updates. The client uses a certificate to verify the signature of the update.
 
-To read more about code signing for your app, please refer to the [expo code signing documentation](https://docs.expo.dev/code-signing/code-signing-overview/).
+To read more about code signing for your app and how you can generate the secrets, please refer to the [expo code signing documentation](https://docs.expo.dev/code-signing/code-signing-overview/).
 
 ## React Native app configuration 
 
@@ -122,7 +122,7 @@ To use the OTA updates in your React Native app, please refer to the [expo-updat
 
 ## Publish App Update
 
-We provide a simple script `build-and-publish-app-release.sh` in the `scripts` folder to build and publish your app updates, copy it to your RN root folder and run it from there:
+We provide a simple script `build-and-publish-app-release.sh` in the `scripts` folder to build and publish your app updates, copy it to your RN app root folder and run it from there:
 
 ```shell
 ./build-and-publish-app-release.sh <runtimeVersion> <your-xavia-ota-url>
@@ -149,7 +149,9 @@ The script will show you the commit hash and message for confirmation before upl
 
 We use a simple rollback-forward mechanism. When a new update is published, it becomes the "active" update and the previous update, let's call it "inactive" update, is still available in your server but not served to the clients. 
 
-If anything goes wrong with the active update, and you want to rollback to the inactive update, you can simply click a button in the admin dashboard. What happens behind the scenes is that we copy the inactive update with a new timestamp and push it to the front of the queue of updates effectively making it the new active update.
+If anything goes wrong with the active update, and you want to rollback to the inactive one, you can simply click a button in the admin dashboard. 
+
+What happens behind the scenes is that we copy the inactive update with a new timestamp and push it to the front of the queue of updates, effectively making it the new active update.
 
 ## Admin Dashboard
 
