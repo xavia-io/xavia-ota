@@ -9,7 +9,7 @@
     "lint": "eslint apiUtils pages",
     "test": "jest",
     "prepare": "husky",
-    "release": "standard-version",
+    "release": "bash ./scripts/release.sh",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s"
   },
   "dependencies": {
