@@ -5,6 +5,10 @@ on:
     tags:
       - 'v*'
 
+# Add permissions block
+permissions:
+  contents: write
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -60,3 +64,5 @@ jobs:
           body: ${{ env.CHANGELOG }}
           draft: false
           prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Explicitly specify the token
