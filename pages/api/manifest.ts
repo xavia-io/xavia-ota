@@ -57,6 +57,11 @@ export default async function manifestEndpoint(req: NextApiRequest, res: NextApi
       runtimeVersion
     );
   } catch (error: any) {
+    if (error instanceof NoUpdateAvailableError) {
+      logger.info('No update available for runtime version', { runtimeVersion });
+      await putNoUpdateAvailableInResponseAsync(req, res, protocolVersion);
+      return;
+    }
     res.statusCode = 404;
     res.json({
       error: error.message,

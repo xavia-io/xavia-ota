@@ -31,7 +31,7 @@ export class UpdateHelper {
     const updatesDirectoryForRuntimeVersion = `updates/${runtimeVersion}`;
 
     if (!(await storage.fileExists(updatesDirectoryForRuntimeVersion))) {
-      throw new Error('Unsupported runtime version');
+      throw new NoUpdateAvailableError();
     }
 
     const zipFiles = (await storage.listFiles(updatesDirectoryForRuntimeVersion))
