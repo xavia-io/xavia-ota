@@ -1,6 +1,6 @@
 {
   "name": "xavia-ota-updates",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "scripts": {
     "dev": "make -f ./scripts/dev/Makefile",
