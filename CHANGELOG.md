@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.2](https://github.com/xavia-io/xavia-ota/compare/v1.0.1...v1.0.2) (2024-12-19)
+
+
+### Bug Fixes
+
+* **deps:** update nanoid to version 3.3.8 ([#3](https://github.com/xavia-io/xavia-ota/issues/3)) ([61f52dc](https://github.com/xavia-io/xavia-ota/commit/61f52dc262cca42d161b6ad08b62fac567ba6ae5))
+
+
+### CI
+
+* add manual release workflow ([fd2f65c](https://github.com/xavia-io/xavia-ota/commit/fd2f65c7e09dadf134fa0b72ee8b87545fa44c76))
+* add manual release workflow - fixed ([7e57bb1](https://github.com/xavia-io/xavia-ota/commit/7e57bb17e0ccf4a5693ac61d2b5f8ccc0e7a3955))
+* fix permissions for Github release workflow ([3e91acd](https://github.com/xavia-io/xavia-ota/commit/3e91acd6d9f8a778254fee1f81d4d5e946667fb9))
+
 ### 1.0.1 (2024-11-28)
 
 
