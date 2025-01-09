@@ -35,6 +35,6 @@ services:
 
     # For local storage, uncomment to persist data
     # volumes:
-    #   - ./storage:/data/storage
+    #   - ./local-releases:/app/local-releases
 
     restart: unless-stopped
