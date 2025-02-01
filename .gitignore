@@ -42,3 +42,7 @@ code-signing-keys
 
 # Husky
 .husky/_
+
+# IntelliJ
+#
+.idea

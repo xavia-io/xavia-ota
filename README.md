@@ -116,7 +116,7 @@ Refer to [Storage & Database Configuration](./docs/supportedStorageAlternatives.
 
 The code signing is done using a private key. The private key is used to sign the updates. The client uses a certificate to verify the signature of the update.
 
-To read more about code signing for your app and how you can generate the secrets, please refer to the [expo code signing documentation](https://docs.expo.dev/code-signing/code-signing-overview/).
+To read more about code signing for your app and how you can generate the secrets, please refer to the [expo code signing documentation](https://docs.expo.dev/eas-update/code-signing/).
 
 ## React Native app configuration 
 
