@@ -15,7 +15,17 @@ export class PostgresDatabase implements DatabaseInterface {
       port: parseInt(process.env.POSTGRES_PORT ?? '5432', 10),
     });
   }
+  async getLatestReleaseRecordForRuntimeVersion(runtimeVersion: string): Promise<Release | null> {
+    const query = `
+      SELECT id, runtime_version as "runtimeVersion", path, timestamp, commit_hash as "commitHash"
+      FROM ${Tables.RELEASES} WHERE runtime_version = $1
+      ORDER BY timestamp DESC
+      LIMIT 1
+    `;
 
+    const { rows } = await this.pool.query(query, [runtimeVersion]);
+    return rows[0] || null;
+  }
   async getReleaseByPath(path: string): Promise<Release | null> {
     const query = `
       SELECT id, runtime_version as "runtimeVersion", path, timestamp, commit_hash as "commitHash"
@@ -65,9 +75,9 @@ export class PostgresDatabase implements DatabaseInterface {
 
   async createRelease(release: Omit<Release, 'id'>): Promise<Release> {
     const query = `
-      INSERT INTO ${Tables.RELEASES} (runtime_version, path, timestamp, commit_hash, commit_message)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING id, runtime_version as "runtimeVersion", path, timestamp, commit_hash as "commitHash"
+      INSERT INTO ${Tables.RELEASES} (runtime_version, path, timestamp, commit_hash, commit_message, update_id)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING id, runtime_version as "runtimeVersion", path, timestamp, commit_hash as "commitHash", update_id as "updateId"
     `;
 
     const values = [
@@ -76,6 +86,7 @@ export class PostgresDatabase implements DatabaseInterface {
       release.timestamp,
       release.commitHash,
       release.commitMessage,
+      release.updateId,
     ];
     const { rows } = await this.pool.query(query, values);
     return rows[0];

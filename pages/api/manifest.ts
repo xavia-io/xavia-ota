@@ -21,7 +21,13 @@ export default async function manifestEndpoint(req: NextApiRequest, res: NextApi
     return;
   }
 
-  logger.info('A client requested a release');
+  logger.info('A client requested a release', {
+    runtimeVersion: req.headers['expo-runtime-version'],
+    platform: req.headers['expo-platform'],
+    protocolVersion: req.headers['expo-protocol-version'],
+    apiVersion: req.headers['expo-api-version'],
+    currentUpdateId: req.headers['expo-current-update-id'],
+  });
 
   const protocolVersionMaybeArray = req.headers['expo-protocol-version'];
   if (protocolVersionMaybeArray && Array.isArray(protocolVersionMaybeArray)) {
@@ -31,6 +37,7 @@ export default async function manifestEndpoint(req: NextApiRequest, res: NextApi
     });
     return;
   }
+
   const protocolVersion = parseInt(protocolVersionMaybeArray ?? '0', 10);
 
   const platform = req.headers['expo-platform'] ?? req.query['platform'];
@@ -51,6 +58,22 @@ export default async function manifestEndpoint(req: NextApiRequest, res: NextApi
     return;
   }
 
+  const database = DatabaseFactory.getDatabase();
+  const releaseRecord = await database.getLatestReleaseRecordForRuntimeVersion(runtimeVersion);
+
+  if (releaseRecord) {
+    const updateId = releaseRecord.updateId;
+
+    const currentUpdateId = req.headers['expo-current-update-id'];
+    if (currentUpdateId === updateId) {
+      logger.info('User is already running the latest release. Returning NoUpdateAvailable.', {
+        runtimeVersion,
+      });
+      await putNoUpdateAvailableInResponseAsync(req, res, protocolVersion);
+      return;
+    }
+  }
+
   let updateBundlePath: string;
   try {
     updateBundlePath = await UpdateHelper.getLatestUpdateBundlePathForRuntimeVersionAsync(
@@ -62,6 +85,7 @@ export default async function manifestEndpoint(req: NextApiRequest, res: NextApi
       await putNoUpdateAvailableInResponseAsync(req, res, protocolVersion);
       return;
     }
+
     res.statusCode = 404;
     res.json({
       error: error.message,
@@ -130,6 +154,7 @@ async function putUpdateInResponseAsync(
   // NoUpdateAvailable directive only supported on protocol version 1
   // for protocol version 0, serve most recent update as normal
   if (currentUpdateId === HashHelper.convertSHA256HashToUUID(id) && protocolVersion === 1) {
+    logger.info('returning NoUpdateAvailable to client');
     throw new NoUpdateAvailableError();
   }
 

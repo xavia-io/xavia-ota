@@ -1,6 +1,9 @@
 import { LocalStorage } from './LocalStorage';
 import { StorageInterface } from './StorageInterface';
 import { SupabaseStorage } from './SupabaseStorage';
+import { getLogger } from '../logger';
+
+const logger = getLogger('StorageFactory');
 
 export class StorageFactory {
   private static instance: StorageInterface;
@@ -13,6 +16,7 @@ export class StorageFactory {
       } else if (storageType === 'local') {
         StorageFactory.instance = new LocalStorage();
       } else {
+        logger.error('Unsupported storage type', { storageType });
         throw new Error('Unsupported storage type');
       }
     }

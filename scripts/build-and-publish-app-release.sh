@@ -37,8 +37,9 @@ mkdir -p $outputFolder
 # Run expo export with the specified output folder
 npx expo export --output-dir $outputFolder
 
-# Copy app.json to the output folder and rename it to expoconfig.json
-cp app.json $outputFolder/expoconfig.json
+# Extract expo config property from app.json and save to expoconfig.json
+jq '.expo' app.json > $outputFolder/expoconfig.json
+
 
 # Zip the output folder
 cd $outputFolder  

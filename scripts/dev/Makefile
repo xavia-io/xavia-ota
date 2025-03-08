@@ -2,7 +2,7 @@
 
 # Start both database and Next.js development server
 dev: db check-db
-	next dev
+	next dev -p 3001
 
 # Start Docker Compose in detached mode
 db:

@@ -6,6 +6,10 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { DatabaseFactory } from '../../apiUtils/database/DatabaseFactory';
 import { StorageFactory } from '../../apiUtils/storage/StorageFactory';
 
+import AdmZip from 'adm-zip';
+import { ZipHelper } from '../../apiUtils/helpers/ZipHelper';
+import { HashHelper } from '../../apiUtils/helpers/HashHelper';
+
 export const config = {
   api: {
     bodyParser: false,
@@ -38,6 +42,12 @@ export default async function uploadHandler(req: NextApiRequest, res: NextApiRes
 
     // Store the zipped file as is
     const zipContent = fs.readFileSync(file.filepath);
+    const zipFolder = new AdmZip(file.filepath);
+    const metadataJsonFile = await ZipHelper.getFileFromZip(zipFolder, 'metadata.json');
+
+    const updateHash = HashHelper.createHash(metadataJsonFile, 'sha256', 'hex');
+    const updateId = HashHelper.convertSHA256HashToUUID(updateHash);
+
     const path = await storage.uploadFile(`${updatePath}/${timestamp}.zip`, zipContent);
 
     await DatabaseFactory.getDatabase().createRelease({
@@ -46,6 +56,7 @@ export default async function uploadHandler(req: NextApiRequest, res: NextApiRes
       timestamp: moment().utc().toString(),
       commitHash,
       commitMessage,
+      updateId,
     });
 
     res.status(200).json({ success: true, path });
