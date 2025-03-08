@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.0.0](https://github.com/xavia-io/xavia-ota/compare/v1.0.2...v2.0.0) (2025-03-08)
+
+
+### Features
+
+* track uploaded release ids ([ce693b1](https://github.com/xavia-io/xavia-ota/commit/ce693b1f9e80fa9c5975f9b058c87f234eee0c5b))
+
 ### [1.0.2](https://github.com/xavia-io/xavia-ota/compare/v1.0.1...v1.0.2) (2024-12-19)
 
 
