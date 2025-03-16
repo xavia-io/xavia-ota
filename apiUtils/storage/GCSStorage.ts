@@ -1,4 +1,4 @@
-const { Storage } = require('@google-cloud/storage');
+import { Storage } from '@google-cloud/storage';
 
 import { StorageInterface } from './StorageInterface';
 
@@ -31,12 +31,7 @@ export class GCSStorage implements StorageInterface {
       delimiter: '/',
     });
 
-    return files.map((file: any) => file
-      .name
-      .split('/')
-      .slice(0, -1)
-      .join('/')
-    );
+    return files.map((file: any) => file.name.split('/').slice(0, -1).join('/'));
   }
 
   async uploadFile(path: string, file: Buffer): Promise<string> {
@@ -56,11 +51,7 @@ export class GCSStorage implements StorageInterface {
       prefix: path.split('/').slice(0, -1).join('/'),
     });
 
-    return files.some((file: any) => file
-      .name
-      .split('/')
-      .pop() === path.split('/').pop()
-    );
+    return files.some((file: any) => file.name.split('/').pop() === path.split('/').pop());
   }
 
   async listFiles(directory: string): Promise<
