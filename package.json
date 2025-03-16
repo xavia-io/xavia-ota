@@ -17,6 +17,7 @@
     "@chakra-ui/react": "^2.10.4",
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
+    "@google-cloud/storage": "^7.15.2",
     "@supabase/supabase-js": "^2.46.1",
     "adm-zip": "^0.5.16",
     "form-data": "^4.0.0",
@@ -33,6 +34,8 @@
     "winston": "^3.17.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.0.0",
+    "@commitlint/config-conventional": "^19.0.0",
     "@expo/config": "^10.0.4",
     "@next/eslint-plugin-next": "^15.0.3",
     "@types/adm-zip": "^0.5.6",
@@ -42,6 +45,7 @@
     "@types/pg": "^8.11.10",
     "@types/react": "^18.0.1",
     "autoprefixer": "^10.4.20",
+    "conventional-changelog-cli": "^4.1.0",
     "eslint": "^8.13.0",
     "eslint-config-universe": "^11.0.0-beta.0",
     "husky": "^9.1.7",
@@ -50,11 +54,8 @@
     "nullthrows": "^1.1.1",
     "postcss": "^8.4.49",
     "prettier": "^2.6.2",
+    "standard-version": "^9.5.0",
     "tailwindcss": "^3.4.15",
-    "typescript": "^4.6.3",
-    "@commitlint/cli": "^19.0.0",
-    "@commitlint/config-conventional": "^19.0.0",
-    "conventional-changelog-cli": "^4.1.0",
-    "standard-version": "^9.5.0"
+    "typescript": "^4.6.3"
   }
 }

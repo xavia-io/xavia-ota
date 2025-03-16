@@ -21,6 +21,14 @@ BLOB_STORAGE_TYPE=local
 - Useful for development or single-server deployments
 - Ensure the path has proper write permissions
 
+### GCS Storage
+```env
+BLOB_STORAGE_TYPE=gcs
+GCP_BUCKET_NAME=your-gcs-bucket-name
+```
+- Requires a GCP project with GCS bucket enabled
+- Bucket should be created manually before starting the server
+
 ## Supported Database Providers
 Database configuration is managed via `DB_TYPE`.
 
