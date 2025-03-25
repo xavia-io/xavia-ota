@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.0.1](https://github.com/xavia-io/xavia-ota/compare/v2.0.0...v2.0.1) (2025-03-25)
+
+
+### Build System
+
+* **deps:** bump next from 15.0.3 to 15.2.4 ([#12](https://github.com/xavia-io/xavia-ota/issues/12)) ([ff673b0](https://github.com/xavia-io/xavia-ota/commit/ff673b00d25e421fbda346329fa23ae761c8cfc2))
+
 ## [2.0.0](https://github.com/xavia-io/xavia-ota/compare/v1.0.2...v2.0.0) (2025-03-08)
 
 
