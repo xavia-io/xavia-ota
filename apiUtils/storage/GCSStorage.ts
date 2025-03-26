@@ -35,7 +35,10 @@ export class GCSStorage implements StorageInterface {
     // remove directory path from the file name in result
     //only return the first folder name in resulting path
     const innerFolders = files.map((file: any) => {
-      return file.name.replace(directory, '').replace(/^\/+|\/+$/g, '').split('/')[0];
+      return file.name
+        .replace(directory, '')
+        .replace(/^\/+|\/+$/g, '')
+        .split('/')[0];
     });
 
     return innerFolders.filter((value, index, array) => array.indexOf(value) === index);
