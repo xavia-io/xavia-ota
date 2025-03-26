@@ -247,6 +247,7 @@ So the "yes" part is for the ability to use Xavia OTA updates with bare React Na
 Currently, we support:
 - Supabase Storage
 - Local filesystem storage
+- Google Cloud Storage (gcs)
 
 More providers (S3, Azure, etc.) are welcome to be implemented by the community. The `StorageInterface` is quite simple and you can implement it for any blob storage service.
 </details>
