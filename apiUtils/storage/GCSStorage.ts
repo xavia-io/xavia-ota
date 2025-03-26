@@ -26,12 +26,19 @@ export class GCSStorage implements StorageInterface {
   }
 
   async listDirectories(directory: string): Promise<string[]> {
+    // GCS returns file names as fully qualified paths
     const [files] = await this.storage.bucket(this.bucketName).getFiles({
       prefix: directory,
-      delimiter: '/',
+      delimiter: directory.charAt(directory.length - 1) === '/' ? '' : '/',
     });
 
-    return files.map((file: any) => file.name.split('/').slice(0, -1).join('/'));
+    // remove directory path from the file name in result
+    //only return the first folder name in resulting path
+    const innerFolders = files.map((file: any) => {
+      return file.name.replace(directory, '').replace(/^\/+|\/+$/g, '').split('/')[0];
+    });
+
+    return innerFolders.filter((value, index, array) => array.indexOf(value) === index);
   }
 
   async uploadFile(path: string, file: Buffer): Promise<string> {
@@ -62,12 +69,14 @@ export class GCSStorage implements StorageInterface {
       metadata: { size: number; mimetype: string };
     }[]
   > {
+    // GCS returns file names as fully qualified paths
     const [files] = await this.storage.bucket(this.bucketName).getFiles({
       prefix: directory,
     });
 
     return files.map((file: any) => ({
-      name: file.name,
+      // remove directory path from the file name in result
+      name: file.name.split('/').pop(),
       updated_at: file.metadata.updated,
       created_at: file.metadata.timeCreated,
       metadata: {
