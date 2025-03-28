@@ -58,10 +58,13 @@ export class GCSStorage implements StorageInterface {
 
   async fileExists(path: string): Promise<boolean> {
     const [files] = await this.storage.bucket(this.bucketName).getFiles({
-      prefix: path.split('/').slice(0, -1).join('/'),
+      prefix: path,
     });
 
-    return files.some((file: any) => file.name.split('/').pop() === path.split('/').pop());
+    const pathParts = path.split('/');
+    const requestedFile = pathParts[pathParts.length - 1];
+
+    return files.some((file: any) => file.name.includes(requestedFile));
   }
 
   async listFiles(directory: string): Promise<
