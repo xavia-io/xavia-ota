@@ -70,6 +70,14 @@ The easiest way to deploy Xavia OTA is using our public Docker image. The image 
 
     ` docker run -d -p 3000:3000 xaviaio/xavia-ota -e HOST=http://localhost:3000 ...`
 
+## Deployment using Helm
+
+You can also easily deploy on kubernetes using the provided [helm chart](./charts/xavia-ota/)
+
+```bash
+helm install my-release-name charts/xavia-ota -f my_values.yaml  
+```
+
 ### Load test your deployment setup
 Check [this](./docs/laod_testing.md) on how to run load testing for your OTA server in your deployment infrastructure.
 
