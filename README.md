@@ -122,6 +122,9 @@ To read more about code signing for your app and how you can generate the secret
 
 To use the OTA updates in your React Native app, please refer to the [expo-updates configuration](https://docs.expo.dev/versions/latest/sdk/updates/).
 
+⚠️ The `updates.url` parameter in the [app config](https://docs.expo.dev/workflow/configuration) should be set to `https://your-domain-name/api/manifest`. Notice the `/api/manifest` path. Otherwise, you will get the HTML page. ⚠️
+See docs on the `updates.url` parameter [here](https://docs.expo.dev/versions/latest/config/app/#url).
+
 ## Publish App Update
 
 We provide a simple script `build-and-publish-app-release.sh` in the `scripts` folder to build and publish your app updates, copy it to your RN app root folder and run it from there:
