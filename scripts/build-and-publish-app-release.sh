@@ -17,7 +17,7 @@ uploadKey=$3
 
 # Generate a timestamp for the output folder
 timestamp=$(date -u +%Y%m%d%H%M%S)
-outputFolder="ota-builds/$timestamp"
+outputFolder="../ota-builds/$timestamp"
 
 # Ask the user to confirm the hash, commit message, runtime version, and output folder
 echo "Output Folder: $outputFolder"
@@ -48,7 +48,7 @@ zip -q -r ${timestamp}.zip .
 
 
 # Upload the zip file to the server
-curl -X POST $serverHost/api/upload -F "file=@${timestamp}.zip" -F "runtimeVersion=$runtimeVersion" -F "commitHash=$commitHash" -F "commitMessage=$commitMessage"  -F "uploadKey=$uploadKey"
+curl -X POST $serverHost/api/upload -F "file=@${timestamp}.zip" -F "runtimeVersion=$runtimeVersion" -F "commitHash=$commitHash" -F "commitMessage=$commitMessage" -F "uploadKey=$uploadKey"
 
 echo ""
 
