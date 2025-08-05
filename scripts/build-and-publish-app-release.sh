@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Check if the correct number of arguments are provided
-if [ "$#" -ne 2 ]; then
-  echo "Usage: $0 <runtimeVersion> <xavia-ota-url>"
+if [ "$#" -ne 3 ]; then
+  echo "Usage: $0 <runtimeVersion> <xavia-ota-url> <upload-key>"
   exit 1
 fi
 
@@ -13,6 +13,7 @@ commitMessage=$(git log -1 --pretty=%B)
 # Assign arguments to variables
 runtimeVersion=$1
 serverHost=$2
+uploadKey=$3
 
 # Generate a timestamp for the output folder
 timestamp=$(date -u +%Y%m%d%H%M%S)
@@ -47,7 +48,7 @@ zip -q -r ${timestamp}.zip .
 
 
 # Upload the zip file to the server
-curl -X POST $serverHost/api/upload -F "file=@${timestamp}.zip" -F "runtimeVersion=$runtimeVersion" -F "commitHash=$commitHash" -F "commitMessage=$commitMessage"
+curl -X POST $serverHost/api/upload -F "file=@${timestamp}.zip" -F "runtimeVersion=$runtimeVersion" -F "commitHash=$commitHash" -F "commitMessage=$commitMessage"  -F "uploadKey=$uploadKey"
 
 echo ""
 

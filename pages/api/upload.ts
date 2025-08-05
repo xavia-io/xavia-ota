@@ -26,13 +26,19 @@ export default async function uploadHandler(req: NextApiRequest, res: NextApiRes
 
   try {
     const [fields, files] = await form.parse(req);
+    const uploadKey = fields.uploadKey?.[0] || null;
     const file = files.file?.[0];
     const runtimeVersion = fields.runtimeVersion?.[0];
     const commitHash = fields.commitHash?.[0];
     const commitMessage = fields.commitMessage?.[0] || 'No message provided';
 
-    if (!file || !runtimeVersion || !commitHash) {
-      res.status(400).json({ error: 'Missing file, runtime version, or commit hash' });
+    if (!uploadKey || !file || !runtimeVersion || !commitHash) {
+      res.status(400).json({ error: 'Missing upload key, file, runtime version or commit hash' });
+      return;
+    }
+
+    if (process.env.UPLOAD_KEY !== uploadKey) {
+      res.status(400).json({ error: 'Upload failed: missing or wrong upload key' });
       return;
     }
 
