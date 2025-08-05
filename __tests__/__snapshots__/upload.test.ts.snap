@@ -9,7 +9,7 @@ Object {
 
 exports[`Upload API should return 400 for missing required fields 1`] = `
 Object {
-  "error": "Missing file, runtime version, or commit hash",
+  "error": "Missing upload key, file, runtime version or commit hash",
 }
 `;
 
