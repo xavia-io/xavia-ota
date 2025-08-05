@@ -38,7 +38,7 @@ export default async function uploadHandler(req: NextApiRequest, res: NextApiRes
     }
 
     if (process.env.UPLOAD_KEY !== uploadKey) {
-      res.status(400).json({ error: 'Upload failed: missing or wrong upload key' });
+      res.status(400).json({ error: 'Upload failed: wrong upload key' });
       return;
     }
 
