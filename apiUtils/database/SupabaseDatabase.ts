@@ -56,12 +56,12 @@ export class SupabaseDatabase implements DatabaseInterface {
   }
 
   async getReleaseTrackingMetricsForAllReleases(): Promise<TrackingMetrics[]> {
-    const { data: iosCount, error: iosError } = await this.supabase
+    const { count: iosCount, error: iosError } = await this.supabase
       .from(Tables.RELEASES_TRACKING)
       .select('platform', { count: 'estimated', head: true })
       .eq('platform', 'ios');
 
-    const { data: androidCount, error: androidError } = await this.supabase
+    const { count: androidCount, error: androidError } = await this.supabase
       .from(Tables.RELEASES_TRACKING)
       .select('platform', { count: 'estimated', head: true })
       .eq('platform', 'android');
@@ -93,13 +93,13 @@ export class SupabaseDatabase implements DatabaseInterface {
     return data;
   }
   async getReleaseTrackingMetrics(releaseId: string): Promise<TrackingMetrics[]> {
-    const { data: iosCount, error: iosError } = await this.supabase
+    const { count: iosCount, error: iosError } = await this.supabase
       .from(Tables.RELEASES_TRACKING)
       .select('platform', { count: 'estimated', head: true })
       .eq('release_id', releaseId)
       .eq('platform', 'ios');
 
-    const { data: androidCount, error: androidError } = await this.supabase
+    const { count: androidCount, error: androidError } = await this.supabase
       .from(Tables.RELEASES_TRACKING)
       .select('platform', { count: 'estimated', head: true })
       .eq('release_id', releaseId)
