@@ -13,6 +13,7 @@
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.779.0",
     "@chakra-ui/next-js": "^2.4.2",
     "@chakra-ui/react": "^2.10.4",
     "@emotion/react": "^11.13.3",
