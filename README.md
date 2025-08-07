@@ -94,6 +94,7 @@ Check [this](./docs/laod_testing.md) on how to run load testing for your OTA ser
    DB_TYPE=postgres
    ADMIN_PASSWORD=your-admin-password
    PRIVATE_KEY_BASE_64=your-base64-encoded-private-key
+   UPLOAD_KEY=abc123def456
    POSTGRES_USER=postgres
    POSTGRES_PASSWORD=postgres
    POSTGRES_DB=releases_db
@@ -130,7 +131,7 @@ See docs on the `updates.url` parameter [here](https://docs.expo.dev/versions/la
 We provide a simple script `build-and-publish-app-release.sh` in the `scripts` folder to build and publish your app updates, copy it to your RN app root folder and run it from there:
 
 ```shell
-./build-and-publish-app-release.sh <runtimeVersion> <your-xavia-ota-url>
+./build-and-publish-app-release.sh <runtimeVersion> <your-xavia-ota-url> <uploadKey>
 ```
 
 > **Important**: Make sure the runtime version is the same as the one you use in your expo-updates config in your app. 
@@ -138,7 +139,7 @@ We provide a simple script `build-and-publish-app-release.sh` in the `scripts` f
 
 Example:
 ```shell
-./build-and-publish-app-release.sh 1.0.0 http://localhost:3000
+./build-and-publish-app-release.sh 1.0.0 http://localhost:3000 abc123def456
 ```
 
 This script will:
