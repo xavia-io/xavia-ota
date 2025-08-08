@@ -1,0 +1,17 @@
+{{- if eq .Values.config.blobStorage.type "local" }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "xavia-ota.fullname" . }}-pvc
+  labels:
+    {{- include "xavia-ota.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.config.blobStorage.local.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.config.blobStorage.local.size }}
+  {{- if .Values.config.blobStorage.local.storageClass }}
+  storageClassName: {{ .Values.config.blobStorage.local.storageClass }}
+  {{- end }}
+{{- end }}

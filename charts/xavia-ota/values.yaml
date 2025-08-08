@@ -1,0 +1,137 @@
+global:
+  imagePullSecrets: []
+
+image:
+  repository: xaviaio/xavia-ota
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+service:
+  type: ClusterIP
+  port: 3000
+  targetPort: 3000
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations: {}
+  host: xavia-ota.yourdomain.com
+  tls:
+    enabled: false
+    secretName: xavia-ota-tls
+
+# Application Configuration
+config:
+  # Server Configuration
+  host: "http://xavia-ota.yourdomain.com"
+
+  # Storage Configuration
+  blobStorage:
+    type: "local" # Options: supabase, local, gcs
+
+    # Local Configuration
+    local:
+      storageClass: ""
+      accessMode: ReadWriteOnce
+      size: 10Gi
+      mountPath: /app/local-releases
+
+    # GCS Configuration (if using gcs)
+    gcs:
+      bucketName: ""
+      # GCS Service Account Configuration
+      serviceAccount:
+        # Option 1: Create secret from existing secret in cluster
+        existingSecret: "" # Name of existing secret containing service-account.json
+        existingSecretKey: "service-account.json" # Key in the secret
+
+        # Option 2: Provide service account JSON directly (base64 encoded)
+        credentialsJson: "" # Base64 encoded service account JSON
+
+    # Supabase configuration
+    supabase:
+      url: ""
+      apiKey: ""
+      bucketName: "expo-updates"
+
+  database:
+    type: postgres # options are postgres,supabase
+    postgres:
+      user:
+      name:
+      port: 5432
+      host:
+
+      # password:
+      #   value: ""
+
+      # Or we can specify the value from a secret or other reference points
+      # password:
+      #   valueFrom:
+      #     secretKeyRef:
+      #       name: ""
+      #       key: ""
+      password:
+
+      # Schema Migration (ensure the tables are created)
+      schemaMigration:
+        enabled: true
+        image:
+          repository: postgres
+          tag: "14"
+          pullPolicy: IfNotPresent
+
+    # Supabase Configuration (if using supabase)
+    supabase:
+      url: ""
+      apiKey: ""
+
+  # Security
+  privateKeyBase64: "your_base64_encoded_private_key"
+  adminPassword: "your_secure_admin_password"
+
+
+
+# Resource limits
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+# Health checks
+livenessProbe:
+  httpGet:
+    path: /
+    port: 3000
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: 3000
+  initialDelaySeconds: 5
+  periodSeconds: 5
+
+# Node selector, tolerations, and affinity
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Pod Security Context
+podSecurityContext:
+  fsGroup: 1000
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+  allowPrivilegeEscalation: false

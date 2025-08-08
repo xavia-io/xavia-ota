@@ -1,0 +1,126 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "xavia-ota.fullname" . }}
+  labels:
+    {{- include "xavia-ota.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "xavia-ota.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "xavia-ota.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if and (eq .Values.config.database.type "postgres") (.Values.config.database.postgres.schemaMigration.enabled) }}
+      initContainers:
+        - name: schema-migration
+          image: "{{ .Values.config.database.postgres.schemaMigration.image.repository }}:{{ .Values.config.database.postgres.schemaMigration.image.tag }}"
+          imagePullPolicy: {{ .Values.config.database.postgres.schemaMigration.image.pullPolicy }}
+          command: ["/bin/bash", "/scripts/init-db.sh"] # Execute the script from the mounted volume
+          volumeMounts: # Mount the ConfigMap as a volume
+            - name: postgres-init-script-volume
+              mountPath: /scripts
+              readOnly: true
+          env:
+            {{- if .Values.config.database.postgres.password.valueFrom }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                {{- toYaml .Values.config.database.postgres.password.valueFrom | nindent 16 }}
+            {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "xavia-ota.fullname" . }}-config
+            - secretRef:
+                name: {{ include "xavia-ota.fullname" . }}-secret
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          {{- if and (eq .Values.config.database.type "postgres") (.Values.config.database.postgres.password.valueFrom) }}
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                {{- toYaml .Values.config.database.postgres.password.valueFrom | nindent 16 }}
+          {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "xavia-ota.fullname" . }}-config
+            - secretRef:
+                name: {{ include "xavia-ota.fullname" . }}-secret
+          {{- if .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if or (eq .Values.config.blobStorage.type "local") (eq .Values.config.blobStorage.type "gcs") }}
+          volumeMounts:
+            {{- if eq .Values.config.blobStorage.type "local" }}
+            - name: local-storage
+              mountPath: {{ .Values.config.blobStorage.local.mountPath }}
+            {{- end }}
+            {{- if eq .Values.config.blobStorage.type "gcs" }}
+            - name: gcp-service-account
+              mountPath: /etc/gcp
+              readOnly: true
+            {{- end }}
+          {{- end }}
+      volumes: # Define the volume for the ConfigMap
+        - name: postgres-init-script-volume
+          configMap:
+            name: {{ include "xavia-ota.fullname" . }}-postgres-init-script
+            defaultMode: 0755 # Ensure the script is executable
+        {{- if or (eq .Values.config.blobStorage.type "local") (eq .Values.config.blobStorage.type "gcs") }}
+        {{- if eq .Values.config.blobStorage.type "local" }}
+        - name: local-storage
+          persistentVolumeClaim:
+            claimName: {{ include "xavia-ota.fullname" . }}-pvc
+        {{- end }}
+        {{- if eq .Values.config.blobStorage.type "gcs" }}
+        - name: gcp-service-account
+          secret:
+            {{- if .Values.config.blobStorage.gcs.serviceAccount.existingSecret }}
+            secretName: {{ .Values.config.blobStorage.gcs.serviceAccount.existingSecret }}
+            items:
+              - key: {{ .Values.config.blobStorage.gcs.serviceAccount.existingSecretKey }}
+                path: service-account.json
+            {{- else }}
+            secretName: {{ include "xavia-ota.fullname" . }}-secret
+            items:
+              - key: service-account.json
+                path: service-account.json
+            {{- end }}
+        {{- end }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
