@@ -99,6 +99,7 @@ Check [this](./docs/laod_testing.md) on how to run load testing for your OTA ser
    POSTGRES_DB=releases_db
    POSTGRES_HOST=localhost
    POSTGRES_PORT=5432
+   POSTGRES_SSL=false
    ```
 
 4. Start the development server:

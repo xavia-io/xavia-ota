@@ -12,7 +12,7 @@ COPY . .
 RUN npm run build
 
 
-FROM node:18.18-alpine as runner
+FROM node:18.18-alpine AS runner
 
 WORKDIR /app
 

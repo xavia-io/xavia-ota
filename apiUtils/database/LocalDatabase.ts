@@ -7,12 +7,14 @@ export class PostgresDatabase implements DatabaseInterface {
   private pool: Pool;
 
   constructor() {
+    const useSSL = process.env.POSTGRES_SSL === 'true';
     this.pool = new Pool({
       user: process.env.POSTGRES_USER,
       password: process.env.POSTGRES_PASSWORD,
       database: process.env.POSTGRES_DB,
       host: process.env.POSTGRES_HOST,
       port: parseInt(process.env.POSTGRES_PORT ?? '5432', 10),
+      ...(useSSL ? { ssl: { rejectUnauthorized: false } } : {}),
     });
   }
   async getLatestReleaseRecordForRuntimeVersion(runtimeVersion: string): Promise<Release | null> {
