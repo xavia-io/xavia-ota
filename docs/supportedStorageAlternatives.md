@@ -49,6 +49,7 @@ POSTGRES_PASSWORD=your-password
 POSTGRES_DB=your-database-name
 POSTGRES_HOST=your-host
 POSTGRES_PORT=your-port
+POSTGRES_SSL=false
 ```
 - Direct PostgreSQL connection
 - Supports any PostgreSQL-compatible database
