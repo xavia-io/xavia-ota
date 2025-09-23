@@ -17,9 +17,11 @@ jest.mock('formidable');
 jest.mock('fs');
 jest.mock('adm-zip');
 
+
 describe('Upload API', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    process.env.ADMIN_PASSWORD = 'admin';
   });
 
   it('should return 405 for non-POST requests', async () => {
@@ -31,12 +33,15 @@ describe('Upload API', () => {
 
   it('should handle file upload successfully', async () => {
     // Mock form data
+    console.log('Environment ADMIN_PASSWORD:', process.env.ADMIN_PASSWORD);
+  
     const mockForm = {
       parse: jest.fn().mockResolvedValue([
         {
           runtimeVersion: ['1.0.0'],
           commitHash: ['abc123'],
           commitMessage: ['Test commit message'],
+          adminPassword: ['admin'],
         },
         {
           file: [{ filepath: 'test.zip' }],
@@ -98,7 +103,12 @@ describe('Upload API', () => {
 
   it('should return 400 for missing required fields', async () => {
     const mockForm = {
-      parse: jest.fn().mockResolvedValue([{}, {}]),
+      parse: jest.fn().mockResolvedValue([
+        {
+          adminPassword: ['admin'], // Valid password, but missing other required fields
+        }, 
+        {}
+      ]),
     };
 
     (formidable as unknown as jest.Mock).mockReturnValue(mockForm);
