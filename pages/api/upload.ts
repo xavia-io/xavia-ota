@@ -30,6 +30,13 @@ export default async function uploadHandler(req: NextApiRequest, res: NextApiRes
     const runtimeVersion = fields.runtimeVersion?.[0];
     const commitHash = fields.commitHash?.[0];
     const commitMessage = fields.commitMessage?.[0] || 'No message provided';
+    const adminPassword = fields.adminPassword?.[0];
+
+    // Password check
+    if (!adminPassword || adminPassword !== process.env.ADMIN_PASSWORD) {
+      res.status(401).json({ error: 'Unauthorized: invalid password' });
+      return;
+    }
 
     if (!file || !runtimeVersion || !commitHash) {
       res.status(400).json({ error: 'Missing file, runtime version, or commit hash' });

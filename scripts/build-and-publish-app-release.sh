@@ -6,6 +6,14 @@ if [ "$#" -ne 2 ]; then
   exit 1
 fi
 
+read -s -p "Enter admin password: " adminPassword
+echo
+if [ -z "$adminPassword" ]; then
+  echo "Admin password cannot be empty."
+  exit 1
+fi
+
+
 # Get the current commit hash and message
 commitHash=$(git rev-parse HEAD)
 commitMessage=$(git log -1 --pretty=%B)
@@ -47,7 +55,7 @@ zip -q -r ${timestamp}.zip .
 
 
 # Upload the zip file to the server
-curl -X POST $serverHost/api/upload -F "file=@${timestamp}.zip" -F "runtimeVersion=$runtimeVersion" -F "commitHash=$commitHash" -F "commitMessage=$commitMessage"
+curl -X POST $serverHost/api/upload -F "file=@${timestamp}.zip" -F "runtimeVersion=$runtimeVersion" -F "commitHash=$commitHash" -F "commitMessage=$commitMessage -F "adminPassword=${adminPassword}"
 
 echo ""
 
