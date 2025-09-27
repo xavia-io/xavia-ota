@@ -252,6 +252,7 @@ Currently, we support:
 - Supabase Storage
 - Local filesystem storage
 - Google Cloud Storage (gcs)
+- AWS S3 Compatible Storage (s3)
 
 More providers (S3, Azure, etc.) are welcome to be implemented by the community. The `StorageInterface` is quite simple and you can implement it for any blob storage service.
 </details>
