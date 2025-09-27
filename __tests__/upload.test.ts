@@ -34,6 +34,7 @@ describe('Upload API', () => {
     const mockForm = {
       parse: jest.fn().mockResolvedValue([
         {
+          uploadKey: [process.env.UPLOAD_KEY],
           runtimeVersion: ['1.0.0'],
           commitHash: ['abc123'],
           commitMessage: ['Test commit message'],

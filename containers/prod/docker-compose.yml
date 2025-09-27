@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   xavia-ota:
     image: xaviaio/xavia-ota:latest
@@ -27,6 +25,7 @@ services:
       # Security
       - PRIVATE_KEY_BASE_64=your_base64_encoded_private_key
       - ADMIN_PASSWORD=your_secure_admin_password
+      - UPLOAD_KEY=abc123def456
 
       # Supabase Configuration
       - SUPABASE_URL=your_supabase_project_url
