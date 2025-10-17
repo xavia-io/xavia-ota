@@ -173,4 +173,20 @@ export class SupabaseDatabase implements DatabaseInterface {
       commitMessage: release.commit_message,
     }));
   }
+
+  async getAllTrackingRecords(): Promise<Tracking[]> {
+    const { data, error } = await this.supabase
+      .from(Tables.RELEASES_TRACKING)
+      .select('id, release_id, download_timestamp, platform')
+      .order('download_timestamp', { ascending: false });
+
+    if (error) throw new Error(error.message);
+
+    return data.map((record) => ({
+      id: record.id,
+      releaseId: record.release_id,
+      downloadTimestamp: record.download_timestamp,
+      platform: record.platform,
+    }));
+  }
 }

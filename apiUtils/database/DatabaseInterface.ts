@@ -18,6 +18,7 @@ export interface Tracking {
 export interface TrackingMetrics {
   platform: string;
   count: number;
+  timestamp?: string;
 }
 
 export interface DatabaseInterface {
@@ -28,5 +29,6 @@ export interface DatabaseInterface {
   createTracking(tracking: Omit<Tracking, 'id'>): Promise<Tracking>;
   getReleaseTrackingMetrics(releaseId: string): Promise<TrackingMetrics[]>;
   getReleaseTrackingMetricsForAllReleases(): Promise<TrackingMetrics[]>;
+  getAllTrackingRecords(): Promise<Tracking[]>;
   getLatestReleaseRecordForRuntimeVersion(runtimeVersion: string): Promise<Release | null>;
 }
