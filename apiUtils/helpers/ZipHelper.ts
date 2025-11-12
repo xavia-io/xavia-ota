@@ -27,7 +27,12 @@ export class ZipHelper {
 
   static async getFileFromZip(zip: AdmZip, filePath: string): Promise<Buffer> {
     const entries = zip.getEntries();
-    const entry = entries.find((entry) => entry.entryName === filePath);
+    const entry = entries.find((entry) => {
+      // issue then the filepath comming like : assets\enter
+      // but the enteryName will return assets/enter
+      filePath = filePath.replaceAll('\\', '/')
+      return entry.entryName === filePath
+    });
     if (!entry) throw new Error(`File not found in zip: ${filePath}`);
     return entry.getData();
   }
