@@ -1,14 +1,29 @@
-import { Box, Flex, VStack, Button, FlexProps } from '@chakra-ui/react';
+import {
+  Box,
+  Flex,
+  VStack,
+  Button,
+  FlexProps,
+  Icon,
+  Text,
+  Divider,
+  useColorModeValue,
+  HStack,
+} from '@chakra-ui/react';
 import { useRouter } from 'next/router';
-import { FaSignOutAlt, FaTachometerAlt, FaTags } from 'react-icons/fa';
+import { FiLogOut, FiHome, FiPackage } from 'react-icons/fi';
 import Image from 'next/image';
 
 export default function Layout({ children, ...props }: { children: React.ReactNode } & FlexProps) {
   const router = useRouter();
 
+  const sidebarBg = useColorModeValue('white', 'gray.800');
+  const sidebarBorder = useColorModeValue('gray.200', 'gray.700');
+  const headerBg = useColorModeValue('white', 'gray.800');
+
   const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: <FaTachometerAlt fontSize="1.25rem" /> },
-    { name: 'Releases', path: '/releases', icon: <FaTags fontSize="1.25rem" /> },
+    { name: 'Dashboard', path: '/dashboard', icon: FiHome },
+    { name: 'Releases', path: '/releases', icon: FiPackage },
   ];
 
   const handleLogout = () => {
@@ -17,60 +32,106 @@ export default function Layout({ children, ...props }: { children: React.ReactNo
   };
 
   return (
-    <Box className="w-full" height="100vh" {...props}>
+    <Flex height="100vh" overflow="hidden" bg={useColorModeValue('gray.50', 'gray.900')} {...props}>
+      {/* Sidebar */}
       <Box
-        w="full"
-        p={4}
-        className=" text-white h-[6rem] border-b-gray-200 border-b-2"
+        w="280px"
+        bg={sidebarBg}
+        borderRightWidth="1px"
+        borderColor={sidebarBorder}
         display="flex"
-        alignItems="center"
-        justifyContent="center"
-        position="relative">
-        <Box>
+        flexDirection="column"
+        boxShadow="sm"
+        height="100vh"
+        overflowY="auto">
+        {/* Logo Section */}
+        <Box
+          p={6}
+          bg={headerBg}
+          borderBottomWidth="1px"
+          borderColor={sidebarBorder}
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          minH="100px">
           <Image
             src="/xavia_logo.png"
-            width={200}
-            height={200}
+            width={180}
+            height={60}
             style={{ objectFit: 'contain' }}
             alt="Xavia Logo"
           />
         </Box>
-      </Box>
-      <Flex className="h-[calc(100vh-6rem)] ">
-        <Box
-          w="250px"
-          p={4}
-          className="h-full border-r-gray-200 border-r-2"
-          display="flex"
-          flexDirection="column"
-          justifyContent="space-between">
-          <VStack spacing={4} align="stretch">
-            {navItems.map((item) => (
+
+        {/* Navigation */}
+        <VStack spacing={2} align="stretch" p={4} flex={1}>
+          <Text fontSize="xs" fontWeight="bold" color="gray.500" px={3} mb={2}>
+            NAVIGATION
+          </Text>
+          {navItems.map((item) => {
+            const isActive = router.pathname === item.path;
+            return (
               <Button
                 key={item.path}
-                variant={router.pathname === item.path ? 'solid' : 'ghost'}
-                colorScheme={router.pathname === item.path ? 'primary' : 'gray'}
-                rightIcon={item.icon}
                 onClick={() => router.push(item.path)}
-                justifyContent="space-between">
-                <Box flex="1" textAlign="left">
-                  {item.name}
-                </Box>
+                variant="ghost"
+                justifyContent="flex-start"
+                px={4}
+                py={6}
+                bg={isActive ? 'blue.50' : 'transparent'}
+                color={isActive ? 'blue.600' : 'gray.700'}
+                borderLeftWidth="3px"
+                borderLeftColor={isActive ? 'blue.600' : 'transparent'}
+                borderRadius="md"
+                fontWeight={isActive ? 'semibold' : 'medium'}
+                _hover={{
+                  bg: isActive ? 'blue.100' : 'gray.100',
+                  transform: 'translateX(2px)',
+                }}
+                _active={{
+                  transform: 'translateX(0)',
+                }}
+                transition="all 0.2s">
+                <HStack spacing={3} w="full">
+                  <Icon as={item.icon} boxSize={5} />
+                  <Text>{item.name}</Text>
+                </HStack>
               </Button>
-            ))}
-          </VStack>
+            );
+          })}
+        </VStack>
+
+        {/* Logout Section */}
+        <Box p={4}>
+          <Divider mb={4} />
           <Button
-            variant="outline"
-            colorScheme="red"
             onClick={handleLogout}
-            rightIcon={<FaSignOutAlt />}>
-            Logout
+            variant="ghost"
+            colorScheme="red"
+            justifyContent="flex-start"
+            px={4}
+            py={6}
+            w="full"
+            fontWeight="medium"
+            _hover={{
+              bg: 'red.50',
+              transform: 'translateX(2px)',
+            }}
+            transition="all 0.2s">
+            <HStack spacing={3} w="full">
+              <Icon as={FiLogOut} boxSize={5} />
+              <Text>Logout</Text>
+            </HStack>
           </Button>
         </Box>
-        <Box flex={1} p={8}>
+      </Box>
+
+      {/* Main Content */}
+      <Box flex={1} height="100vh" overflowY="auto" overflowX="hidden">
+        <Box minH="100%" p={8}>
           {children}
         </Box>
-      </Flex>
-    </Box>
+      </Box>
+    </Flex>
   );
 }

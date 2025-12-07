@@ -73,6 +73,16 @@ export class PostgresDatabase implements DatabaseInterface {
     }));
   }
 
+  async getAllTrackingRecords(): Promise<Tracking[]> {
+    const query = `
+      SELECT id, release_id as "releaseId", download_timestamp as "downloadTimestamp", platform
+      FROM ${Tables.RELEASES_TRACKING}
+      ORDER BY download_timestamp DESC
+    `;
+    const { rows } = await this.pool.query(query);
+    return rows;
+  }
+
   async createRelease(release: Omit<Release, 'id'>): Promise<Release> {
     const query = `
       INSERT INTO ${Tables.RELEASES} (runtime_version, path, timestamp, commit_hash, commit_message, update_id)
