@@ -1,0 +1,63 @@
+{{- if eq .Values.config.database.type "postgres" -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "xavia-ota.fullname" . }}-postgres-init-script
+  labels:
+    {{- include "xavia-ota.labels" . | nindent 4 }}
+data:
+  init-db.sh: |
+    #!/bin/bash
+
+    # Exit immediately if a command exits with a non-zero status.
+    set -e
+
+    echo "Waiting for PostgreSQL to be ready..."
+    # Loop until PostgreSQL is ready to accept connections
+    until pg_isready -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER"; do
+      echo "PostgreSQL is not ready yet. Waiting..."
+      sleep 2
+    done
+    echo "PostgreSQL is ready."
+
+    echo "Checking and creating database '$POSTGRES_DB' if it doesn't exist..."
+    # Connect to the default 'postgres' database to create the target database
+    # Use -l to list databases and grep to check if the database exists.
+    # If it doesn't exist, create it.
+    if ! PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -lqt | cut -d \| -f 1 | grep -wq "$POSTGRES_DB"; then
+      echo "Database '$POSTGRES_DB' does not exist. Creating it..."
+      PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d postgres -c "CREATE DATABASE \"$POSTGRES_DB\";"
+      echo "Database '$POSTGRES_DB' created successfully."
+    else
+      echo "Database '$POSTGRES_DB' already exists. Skipping creation."
+    fi
+
+    echo "Running schema migration for database '$POSTGRES_DB'..."
+    # Connect to the target database and run the schema migration
+    PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "
+    CREATE TABLE IF NOT EXISTS releases (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      runtime_version VARCHAR(255) NOT NULL,
+      path VARCHAR(255) NOT NULL,
+      timestamp TIMESTAMP NOT NULL,
+      commit_hash VARCHAR(255) NOT NULL,
+      commit_message VARCHAR(255) NOT NULL,
+      update_id VARCHAR(255)
+    );
+
+    CREATE TABLE IF NOT EXISTS releases_tracking (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      release_id UUID NOT NULL REFERENCES releases(id),
+      download_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      platform VARCHAR(50) NOT NULL,
+      CONSTRAINT fk_release
+          FOREIGN KEY(release_id)
+          REFERENCES releases(id)
+          ON DELETE CASCADE
+    );
+
+    -- Index for faster queries on release_id and timestamp
+    CREATE INDEX IF NOT EXISTS idx_tracking_release_id ON releases_tracking(release_id);
+    CREATE INDEX IF NOT EXISTS idx_tracking_platform ON releases_tracking(platform);"
+    echo "Schema migration completed successfully."
+{{- end }}
