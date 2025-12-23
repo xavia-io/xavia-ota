@@ -10,6 +10,14 @@ export default async function rollbackHandler(req: NextApiRequest, res: NextApiR
     return;
   }
 
+  // postgres schema uses VARCHAR(255) for commit_message; defensively normalize + truncate to avoid DB errors
+  const normalizeAndTruncateCommitMessage = (input: unknown, maxChars = 255): string => {
+    const raw = typeof input === 'string' ? input : 'No message provided';
+    const normalized = raw.replace(/\s+/g, ' ').trim();
+    const chars = Array.from(normalized); // unicode-safe (code points)
+    return chars.length > maxChars ? chars.slice(0, maxChars).join('') : normalized;
+  };
+
   const { path, runtimeVersion, commitHash, commitMessage } = req.body;
 
   if (!path) {
@@ -40,7 +48,7 @@ export default async function rollbackHandler(req: NextApiRequest, res: NextApiR
       runtimeVersion,
       timestamp: moment().utc().toString(),
       commitHash,
-      commitMessage,
+      commitMessage: normalizeAndTruncateCommitMessage(commitMessage),
     });
 
     res.status(200).json({ success: true, newPath });
