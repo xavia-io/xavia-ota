@@ -22,6 +22,15 @@ export default async function uploadHandler(req: NextApiRequest, res: NextApiRes
     return;
   }
 
+  // postgres schema uses VARCHAR(255) for commit_message; defensively normalize + truncate to avoid DB errors
+  const normalizeAndTruncateCommitMessage = (input: unknown, maxChars = 255): string => {
+    const raw = typeof input === 'string' ? input : 'No message provided';
+    // Replace newlines/tabs to keep it readable in UI + consistent storage
+    const normalized = raw.replace(/\s+/g, ' ').trim();
+    const chars = Array.from(normalized); // unicode-safe (code points)
+    return chars.length > maxChars ? chars.slice(0, maxChars).join('') : normalized;
+  };
+
   const form = formidable({});
 
   try {
@@ -30,7 +39,7 @@ export default async function uploadHandler(req: NextApiRequest, res: NextApiRes
     const file = files.file?.[0];
     const runtimeVersion = fields.runtimeVersion?.[0];
     const commitHash = fields.commitHash?.[0];
-    const commitMessage = fields.commitMessage?.[0] || 'No message provided';
+    const commitMessage = normalizeAndTruncateCommitMessage(fields.commitMessage?.[0]);
 
     if (!uploadKey || !file || !runtimeVersion || !commitHash) {
       res.status(400).json({ error: 'Missing upload key, file, runtime version or commit hash' });
