@@ -1,20 +1,21 @@
 
-FROM node:18.18-alpine AS builder
+FROM oven/bun:alpine AS base
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
 
-RUN npm install
+FROM base AS builder
+
+COPY package.json bun.lock ./
+
+RUN bun install
 
 COPY . .
 
-RUN npm run build
+RUN bun run build
 
 
-FROM node:18.18-alpine as runner
-
-WORKDIR /app
+FROM base AS runner
 
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
@@ -22,4 +23,4 @@ COPY --from=builder /app/public ./public
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+CMD ["bun", "run", "server.js"]

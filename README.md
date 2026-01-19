@@ -1,4 +1,4 @@
-# Xavia OTA Updates Server 
+# Xavia OTA Updates Server
 
 [![Tests](https://github.com/xavia-io/xavia-ota/actions/workflows/test.yml/badge.svg)](https://github.com/xavia-io/xavia-ota/actions/workflows/test.yml)
 [![Docker Pulls](https://img.shields.io/docker/pulls/xaviaio/xavia-ota)](https://hub.docker.com/r/xaviaio/xavia-ota)
@@ -9,8 +9,6 @@ A self-hosted Over-The-Air (OTA) updates server for Expo/RN applications that gi
 
 ## Table of Contents <!-- omit in toc -->
 
-
- 
 - [Xavia OTA Updates Server](#xavia-ota-updates-server)
   - [Overview](#overview)
   - [Key Features](#key-features)
@@ -34,7 +32,6 @@ A self-hosted Over-The-Air (OTA) updates server for Expo/RN applications that gi
     - [What database options are supported?](#what-database-options-are-supported)
     - [Is this production-ready?](#is-this-production-ready)
   - [License](#license)
-
 
 ## Overview
 
@@ -60,34 +57,37 @@ This system provides a robust OTA update infrastructure with these key component
 
 - 📊 Insights - Get insights into your update distribution with detailed analytics.
 
-
 ## Deployment
 
 The easiest way to deploy Xavia OTA is using our public Docker image. The image is available on Docker Hub at [xaviaio/xavia-ota](https://hub.docker.com/repository/docker/xaviaio/xavia-ota).
 
-1. You can copy the `docker-compose.yml` file in the `containers/prod` folder and set the environment variables properly. 
+1. You can copy the `docker-compose.yml` file in the `containers/prod` folder and set the environment variables properly.
 2. Or if you like the longer route, you can pull the image and run it manually
 
-    ` docker run -d -p 3000:3000 xaviaio/xavia-ota -e HOST=http://localhost:3000 ...`
+   ` docker run -d -p 3000:3000 xaviaio/xavia-ota -e HOST=http://localhost:3000 ...`
 
 ### Load test your deployment setup
+
 Check [this](./docs/laod_testing.md) on how to run load testing for your OTA server in your deployment infrastructure.
 
 ## Local Development
 
 1. Clone the repository and install dependencies:
+
    ```bash
    git clone git@github.com:xavia-io/xavia-ota.git
    cd xavia-ota
-   npm install
+   bun install
    ```
 
 2. Copy the example local env file:
+
    ```bash
    cp .env.example.local .env.local
    ```
 
 3. Configure your environment variables in `.env.local`. The minimal required configuration is:
+
    ```env
    HOST=http://localhost:3000
    BLOB_STORAGE_TYPE=local
@@ -104,22 +104,20 @@ Check [this](./docs/laod_testing.md) on how to run load testing for your OTA ser
 
 4. Start the development server:
    ```bash
-   npm run dev
+   bun run dev
    ```
 
 The server and admin dashboard will be available at `http://localhost:3000`.
 
-
 Refer to [Storage & Database Configuration](./docs/supportedStorageAlternatives.md) for more configuration options.
 
-
-## Code Signing 
+## Code Signing
 
 The code signing is done using a private key. The private key is used to sign the updates. The client uses a certificate to verify the signature of the update.
 
 To read more about code signing for your app and how you can generate the secrets, please refer to the [expo code signing documentation](https://docs.expo.dev/eas-update/code-signing/).
 
-## React Native app configuration 
+## React Native app configuration
 
 To use the OTA updates in your React Native app, please refer to the [expo-updates configuration](https://docs.expo.dev/versions/latest/sdk/updates/).
 
@@ -134,15 +132,17 @@ We provide a simple script `build-and-publish-app-release.sh` in the `scripts` f
 ./build-and-publish-app-release.sh <runtimeVersion> <your-xavia-ota-url> <uploadKey>
 ```
 
-> **Important**: Make sure the runtime version is the same as the one you use in your expo-updates config in your app. 
+> **Important**: Make sure the runtime version is the same as the one you use in your expo-updates config in your app.
 > Refer to the [React Native app configuration](#react-native-app-configuration) for more information.
 
 Example:
+
 ```shell
 ./build-and-publish-app-release.sh 1.0.0 http://localhost:3000 abc123def456
 ```
 
 This script will:
+
 1. Build your app using `expo export`
 2. Package the update with metadata
 3. Upload it to your Xavia OTA server
@@ -153,9 +153,9 @@ The script will show you the commit hash and message for confirmation before upl
 
 ## Rollbacks
 
-We use a simple rollback-forward mechanism. When a new update is published, it becomes the "active" update and the previous update, let's call it "inactive" update, is still available in your server but not served to the clients. 
+We use a simple rollback-forward mechanism. When a new update is published, it becomes the "active" update and the previous update, let's call it "inactive" update, is still available in your server but not served to the clients.
 
-If anything goes wrong with the active update, and you want to rollback to the inactive one, you can simply click a button in the admin dashboard. 
+If anything goes wrong with the active update, and you want to rollback to the inactive one, you can simply click a button in the admin dashboard.
 
 What happens behind the scenes is that we copy the inactive update with a new timestamp and push it to the front of the queue of updates, effectively making it the new active update.
 
@@ -166,6 +166,7 @@ For more information about the admin dashboard, please refer to the [Admin Dashb
 ## Technical Stack
 
 ### Core Technologies
+
 - **Framework**: Next.js 15+
 - **Language**: TypeScript
 - **Database**: PostgreSQL 14
@@ -173,19 +174,18 @@ For more information about the admin dashboard, please refer to the [Admin Dashb
 - **Container**: Docker & Docker Compose
 
 ### Storage Options
+
 - Local filesystem storage for development
 - Supabase storage for production deployments
-  
+
 Read more about supported blob storage and database options [here](./docs/supportedStorageAlternatives.md).
 
-
-
 ### Development Tools
+
 - ESLint for code quality
 - Jest for testing
 - Docker for containerization
 - Make for development scripts
-
 
 ## Community Contributions
 
@@ -205,6 +205,7 @@ Feel free to fork the repository, make your changes, and submit a pull request. 
 <summary>
 
 ### How is this different from EAS Updates?
+
 </summary>
 Xavia OTA is a free, self-hosted alternative to EAS Updates. While EAS Updates is a managed service that costs massively for growing apps, Xavia OTA can be deployed anywhere and is completely free. Both implement the same expo-updates protocol.
 </details>
@@ -213,10 +214,10 @@ Xavia OTA is a free, self-hosted alternative to EAS Updates. While EAS Updates i
 <summary>
 
 ### How is this different from self-hosted CodePush server?
+
 </summary>
 
-The self-hosted CodePush server is tightly coupled with the Azure ecosystem and requires Azure App Service & Azure Blob Storage for production deployments and an Azurite emulator for local development. 
-
+The self-hosted CodePush server is tightly coupled with the Azure ecosystem and requires Azure App Service & Azure Blob Storage for production deployments and an Azurite emulator for local development.
 
 Xavia OTA, on the other hand, is completely independent and can be deployed anywhere - whether that's your own infrastructure, AWS, GCP, or any other cloud provider. Additionally, Xavia OTA implements the expo-updates protocol which is more widely adopted in the React Native ecosystem compared to CodePush's protocol.
 
@@ -226,19 +227,18 @@ Xavia OTA, on the other hand, is completely independent and can be deployed anyw
 <summary>
 
 ### Can I use this with bare React Native apps?
+
 </summary>
 
 This a "yes and no" type of answer. While you can use Xavia OTA with bare React Native apps, you need to configure expo-updates in your app and point it to your Xavia OTA server. Unfortunately, that means you will also need to add a small footprint of the Expo framework to your app as well.
 
 So the "yes" part is for the ability to use Xavia OTA updates with bare React Native apps that haven't been created with Expo, and the "no" part is for the fact that you will need to ship the Expo SDK with your app from now on. The good thing is that you will not need to use any managed Expo services like EAS Build or EAS Submit to use expo-updates in your RN app with Xavia OTA.
 
-> [!NOTE]  This is fun!
+> [!NOTE] This is fun!
 > This problem might be worth working on by the community. The expo-updates protocol is designed to be agnostic to the underlying SDK that you use to build your app. So it should work with any RN app - no matter how bare-bones it is. The only client-side implementation for expo-updates protocol that we know of is the one made by Expo themselves. Xavia OTA implements the expo-updates protocol on the server side and we would love to see the same on the client side. If you are interested in working on this, here are some pointers:
-
 
 1. Expo-updates [protocol specification](https://docs.expo.dev/archive/technical-specs/expo-updates-0/)
 2. Expo-updates [client implementation](https://github.com/expo/expo/tree/main/packages/expo-updates)
-
 
 </details>
 
@@ -246,38 +246,46 @@ So the "yes" part is for the ability to use Xavia OTA updates with bare React Na
 <summary>
 
 ### What blob storage options are supported?
+
 </summary>
 
 Currently, we support:
+
 - Supabase Storage
 - Local filesystem storage
 - Google Cloud Storage (gcs)
 - AWS S3 Compatible Storage (s3)
 
 More providers (S3, Azure, etc.) are welcome to be implemented by the community. The `StorageInterface` is quite simple and you can implement it for any blob storage service.
+
 </details>
 
 <details>
 <summary>
 
 ### What database options are supported?
+
 </summary>
 
 Currently, we support:
+
 - PostgreSQL
 
 More providers (MySQL, MongoDB, etc.) are welcome to be implemented by the community. The `DatabaseInterface` is quite simple and you can implement it for any database service.
+
 </details>
 
 <details>
 <summary>
 
 ### Is this production-ready?
+
 </summary>
 
 Yes! We're using it in production for our own apps. The server implements the complete expo-updates protocol and includes features like release management and rollbacks and simple tracking metrics.
+
 </details>
 
-
 ## License
+
 This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
