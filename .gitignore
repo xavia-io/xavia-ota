@@ -30,6 +30,7 @@ yarn-error.log*
 .env.test.local
 !.env.prod.example
 .env.prod
+/*.vars
 
 
 .vscode
@@ -46,3 +47,6 @@ code-signing-keys
 # IntelliJ
 #
 .idea
+
+# Open Next
+.open-next
