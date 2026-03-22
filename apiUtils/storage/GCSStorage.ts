@@ -1,6 +1,9 @@
 import { Storage } from '@google-cloud/storage';
 
+import { getLogger } from '../logger';
 import { StorageInterface } from './StorageInterface';
+
+const logger = getLogger('GCSStorage');
 
 export class GCSStorage implements StorageInterface {
   private storage;
@@ -16,11 +19,11 @@ export class GCSStorage implements StorageInterface {
   }
 
   async copyFile(sourcePath: string, destinationPath: string): Promise<void> {
-    console.log('Copying file from', sourcePath, 'to', destinationPath);
+    logger.info('Copying file from', sourcePath, 'to', destinationPath);
 
     const copyDestination = this.storage.bucket(this.bucketName).file(destinationPath);
     await this.storage.bucket(this.bucketName).file(sourcePath).copy(copyDestination);
-    console.log(
+    logger.info(
       `gs://${this.bucketName}/${sourcePath} copied to gs://${this.bucketName}/${destinationPath}`
     );
   }
@@ -47,7 +50,7 @@ export class GCSStorage implements StorageInterface {
   async uploadFile(path: string, file: Buffer): Promise<string> {
     const fileObject = this.storage.bucket(this.bucketName).file(path);
     await fileObject.save(file);
-    console.log(`gs://${this.bucketName}/${path} uploaded`);
+    logger.info(`gs://${this.bucketName}/${path} uploaded`);
     return path;
   }
 

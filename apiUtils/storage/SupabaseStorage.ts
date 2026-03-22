@@ -1,6 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 
+import { getLogger } from '../logger';
 import { StorageInterface } from './StorageInterface';
+
+const logger = getLogger('SupabaseStorage');
 
 export class SupabaseStorage implements StorageInterface {
   private supabase;
@@ -17,7 +20,7 @@ export class SupabaseStorage implements StorageInterface {
     this.supabase = createClient(supabaseUrl, supabaseKey);
   }
   async copyFile(sourcePath: string, destinationPath: string): Promise<void> {
-    console.log('Copying file from', sourcePath, 'to', destinationPath);
+    logger.info('Copying file from', sourcePath, 'to', destinationPath);
 
     const { error } = await this.supabase.storage
       .from(this.bucketName)
