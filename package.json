@@ -20,7 +20,7 @@
     "@emotion/styled": "^11.13.0",
     "@google-cloud/storage": "^7.15.2",
     "@supabase/supabase-js": "^2.46.1",
-    "adm-zip": "^0.5.16",
+    "adm-zip": "^0.6.1",
     "form-data": "^4.0.0",
     "formidable": "^3.5.2",
     "framer-motion": "^11.11.17",

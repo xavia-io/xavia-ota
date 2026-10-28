@@ -13,27 +13,31 @@ export default async function releasesHandler(req: NextApiRequest, res: NextApiR
     const storage = StorageFactory.getStorage();
     const directories = await storage.listDirectories('updates/');
 
-    const releasesWithCommitHash = await DatabaseFactory.getDatabase().listReleases();
-
-    const releases = [];
+    const records = await DatabaseFactory.getDatabase().listReleases();
+    const filesByPath = new Map<string, { metadata: { size: number }; created_at: string }>();
     for (const directory of directories) {
       const folderPath = `updates/${directory}`;
       const files = await storage.listFiles(folderPath);
-      const runtimeVersion = directory;
-
       for (const file of files) {
-        const release = releasesWithCommitHash.find((r) => r.path === `${folderPath}/${file.name}`);
-        const commitHash = release ? release.commitHash : null;
-        releases.push({
-          path: release?.path || `${folderPath}/${file.name}`,
-          runtimeVersion,
-          timestamp: file.created_at,
-          size: file.metadata.size,
-          commitHash,
-          commitMessage: release?.commitMessage,
-        });
+        filesByPath.set(`${folderPath}/${file.name}`, file);
       }
     }
+    const releases = records
+      .filter((release) => release.status !== 'uploading' && release.status !== 'failed')
+      .map((release) => ({
+        id: release.id,
+        path: release.path,
+        runtimeVersion: release.runtimeVersion,
+        timestamp: new Date(release.timestamp).toISOString(),
+        size: filesByPath.get(release.path)?.metadata.size ?? 0,
+        commitHash: release.commitHash,
+        commitMessage: release.commitMessage,
+        repositoryUrl: release.repositoryUrl ?? null,
+        updateId: release.updateId,
+        status: release.status,
+        publications: release.publications ?? [],
+        archiveAvailable: filesByPath.has(release.path),
+      }));
 
     res.status(200).json({ releases });
   } catch (error) {

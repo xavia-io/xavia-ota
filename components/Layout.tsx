@@ -1,15 +1,16 @@
-import { Box, Flex, VStack, Button, FlexProps } from '@chakra-ui/react';
+import { Box, Button, Flex, Stack, Text } from '@chakra-ui/react';
+import NextLink from 'next/link';
 import { useRouter } from 'next/router';
-import { FaSignOutAlt, FaTachometerAlt, FaTags } from 'react-icons/fa';
+import { FiGrid, FiLayers, FiLogOut } from 'react-icons/fi';
 import Image from 'next/image';
 
-export default function Layout({ children, ...props }: { children: React.ReactNode } & FlexProps) {
-  const router = useRouter();
+const navItems = [
+  { name: 'Dashboard', path: '/dashboard', icon: FiGrid },
+  { name: 'Releases', path: '/releases', icon: FiLayers },
+];
 
-  const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: <FaTachometerAlt fontSize="1.25rem" /> },
-    { name: 'Releases', path: '/releases', icon: <FaTags fontSize="1.25rem" /> },
-  ];
+export default function Layout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
 
   const handleLogout = () => {
     localStorage.removeItem('isAuthenticated');
@@ -17,60 +18,105 @@ export default function Layout({ children, ...props }: { children: React.ReactNo
   };
 
   return (
-    <Box className="w-full" height="100vh" {...props}>
-      <Box
-        w="full"
-        p={4}
-        className=" text-white h-[6rem] border-b-gray-200 border-b-2"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-        position="relative">
-        <Box>
-          <Image
-            src="/xavia_logo.png"
-            width={200}
-            height={200}
-            style={{ objectFit: 'contain' }}
-            alt="Xavia Logo"
-          />
-        </Box>
-      </Box>
-      <Flex className="h-[calc(100vh-6rem)] ">
-        <Box
-          w="250px"
-          p={4}
-          className="h-full border-r-gray-200 border-r-2"
-          display="flex"
-          flexDirection="column"
-          justifyContent="space-between">
-          <VStack spacing={4} align="stretch">
-            {navItems.map((item) => (
-              <Button
+    <Flex direction={{ base: 'column', md: 'row' }} minH="100vh" bg="background">
+      <Flex
+        as="aside"
+        direction={{ base: 'row', md: 'column' }}
+        align={{ base: 'center', md: 'stretch' }}
+        gap={{ base: 3, md: 8 }}
+        w={{ md: '232px' }}
+        flexShrink={0}
+        position={{ md: 'sticky' }}
+        top={0}
+        h={{ md: '100vh' }}
+        px={4}
+        py={{ base: 3, md: 6 }}
+        borderRight={{ md: '1px solid #26262A' }}
+        borderBottom={{ base: '1px solid #26262A', md: 'none' }}>
+        <Flex as={NextLink} href="/dashboard" align="center" gap={3} px={{ md: 2 }}>
+          <Image src="/go_logo.svg" width={50} height={32} alt="GO" priority />
+          <Text
+            display={{ base: 'none', sm: 'block' }}
+            fontSize="xs"
+            fontWeight={500}
+            color="muted"
+            letterSpacing="0.08em"
+            textTransform="uppercase"
+            pl={3}
+            borderLeft="1px solid"
+            borderColor="line">
+            OTA updates
+          </Text>
+        </Flex>
+
+        <Stack
+          as="nav"
+          direction={{ base: 'row', md: 'column' }}
+          spacing={1}
+          ml={{ base: 'auto', md: 0 }}>
+          {navItems.map((item) => {
+            const isActive = router.pathname === item.path;
+            return (
+              <Flex
                 key={item.path}
-                variant={router.pathname === item.path ? 'solid' : 'ghost'}
-                colorScheme={router.pathname === item.path ? 'primary' : 'gray'}
-                rightIcon={item.icon}
-                onClick={() => router.push(item.path)}
-                justifyContent="space-between">
-                <Box flex="1" textAlign="left">
-                  {item.name}
-                </Box>
-              </Button>
-            ))}
-          </VStack>
-          <Button
-            variant="outline"
-            colorScheme="red"
-            onClick={handleLogout}
-            rightIcon={<FaSignOutAlt />}>
-            Logout
-          </Button>
-        </Box>
-        <Box flex={1} p={8}>
+                as={NextLink}
+                href={item.path}
+                aria-current={isActive ? 'page' : undefined}
+                align="center"
+                gap={3}
+                px={3}
+                h="36px"
+                borderRadius="8px"
+                position="relative"
+                fontSize="sm"
+                fontWeight={500}
+                color={isActive ? 'white' : 'muted'}
+                bg={isActive ? 'rgba(255,255,255,.06)' : 'transparent'}
+                transition="background .15s, color .15s"
+                _hover={{ color: 'white', bg: 'rgba(255,255,255,.04)' }}
+                _focusVisible={{ boxShadow: 'outline', outline: 'none' }}
+                _before={
+                  isActive
+                    ? {
+                        content: '""',
+                        position: 'absolute',
+                        left: 0,
+                        top: '9px',
+                        bottom: '9px',
+                        w: '2px',
+                        borderRadius: 'full',
+                        bg: 'primary.500',
+                      }
+                    : undefined
+                }>
+                <Box as={item.icon} boxSize="16px" flexShrink={0} />
+                <Text display={{ base: 'none', sm: 'block' }}>{item.name}</Text>
+              </Flex>
+            );
+          })}
+        </Stack>
+
+        <Button
+          mt={{ md: 'auto' }}
+          variant="ghost"
+          colorScheme="gray"
+          size="sm"
+          h="36px"
+          justifyContent="flex-start"
+          leftIcon={<FiLogOut />}
+          iconSpacing={3}
+          px={3}
+          _hover={{ bg: 'rgba(255,255,255,.04)', color: '#FF8B8F' }}
+          onClick={handleLogout}>
+          <Text display={{ base: 'none', md: 'block' }}>Log out</Text>
+        </Button>
+      </Flex>
+
+      <Box as="main" flex={1} minW={0} px={{ base: 5, md: 10 }} py={{ base: 6, md: 10 }}>
+        <Box maxW="1120px" mx="auto">
           {children}
         </Box>
-      </Flex>
-    </Box>
+      </Box>
+    </Flex>
   );
 }

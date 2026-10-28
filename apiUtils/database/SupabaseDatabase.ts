@@ -1,6 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
-import { DatabaseInterface, Release, Tracking, TrackingMetrics } from './DatabaseInterface';
+import {
+  DatabaseInterface,
+  MonthlyInstallationMetrics,
+  Release,
+  Tracking,
+  TrackingMetrics,
+} from './DatabaseInterface';
 import { Tables } from './DatabaseFactory';
 
 export class SupabaseDatabase implements DatabaseInterface {
@@ -37,6 +43,7 @@ export class SupabaseDatabase implements DatabaseInterface {
         commitHash: data.commit_hash,
         commitMessage: data.commit_message,
         updateId: data.update_id,
+        repositoryUrl: data.repository_url,
       };
     }
 
@@ -51,19 +58,31 @@ export class SupabaseDatabase implements DatabaseInterface {
       .single();
 
     if (error) throw new Error(error.message);
+    if (!data) return null;
 
-    return data || null;
+    return {
+      id: data.id,
+      runtimeVersion: data.runtime_version,
+      path: data.path,
+      timestamp: data.timestamp,
+      commitHash: data.commit_hash,
+      commitMessage: data.commit_message,
+      updateId: data.update_id,
+      repositoryUrl: data.repository_url,
+    };
   }
 
   async getReleaseTrackingMetricsForAllReleases(): Promise<TrackingMetrics[]> {
     const { count: iosCount, error: iosError } = await this.supabase
       .from(Tables.RELEASES_TRACKING)
-      .select('platform', { count: 'estimated', head: true })
+      .select('platform', { count: 'exact', head: true })
+      .not('installation_id', 'is', null)
       .eq('platform', 'ios');
 
     const { count: androidCount, error: androidError } = await this.supabase
       .from(Tables.RELEASES_TRACKING)
-      .select('platform', { count: 'estimated', head: true })
+      .select('platform', { count: 'exact', head: true })
+      .not('installation_id', 'is', null)
       .eq('platform', 'android');
 
     if (iosError || androidError) throw new Error(iosError?.message || androidError?.message);
@@ -78,31 +97,41 @@ export class SupabaseDatabase implements DatabaseInterface {
       },
     ];
   }
-  async createTracking(tracking: Omit<Tracking, 'id'>): Promise<Tracking> {
+  async getMonthlyInstallationMetrics(): Promise<MonthlyInstallationMetrics[]> {
     const { data, error } = await this.supabase
-      .from(Tables.RELEASES_TRACKING)
-      .insert({
+      .from('monthly_installations')
+      .select('month,count')
+      .order('month', { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((row) => ({ month: row.month, count: Number(row.count) }));
+  }
+  async createTracking(
+    tracking: Pick<Tracking, 'releaseId' | 'platform' | 'installationId'>
+  ): Promise<void> {
+    const { error } = await this.supabase.from(Tables.RELEASES_TRACKING).upsert(
+      {
         release_id: tracking.releaseId,
         platform: tracking.platform,
-        download_timestamp: tracking.downloadTimestamp,
-      })
-      .select()
-      .single();
+        installation_id: tracking.installationId,
+      },
+      { onConflict: 'release_id,installation_id', ignoreDuplicates: true }
+    );
 
     if (error) throw new Error(error.message);
-    return data;
   }
   async getReleaseTrackingMetrics(releaseId: string): Promise<TrackingMetrics[]> {
     const { count: iosCount, error: iosError } = await this.supabase
       .from(Tables.RELEASES_TRACKING)
-      .select('platform', { count: 'estimated', head: true })
+      .select('platform', { count: 'exact', head: true })
       .eq('release_id', releaseId)
+      .not('installation_id', 'is', null)
       .eq('platform', 'ios');
 
     const { count: androidCount, error: androidError } = await this.supabase
       .from(Tables.RELEASES_TRACKING)
-      .select('platform', { count: 'estimated', head: true })
+      .select('platform', { count: 'exact', head: true })
       .eq('release_id', releaseId)
+      .not('installation_id', 'is', null)
       .eq('platform', 'android');
 
     if (iosError || androidError) throw new Error(iosError?.message || androidError?.message);
@@ -129,6 +158,7 @@ export class SupabaseDatabase implements DatabaseInterface {
         commit_hash: release.commitHash,
         commit_message: release.commitMessage,
         update_id: release.updateId,
+        repository_url: release.repositoryUrl ?? null,
       })
       .select()
       .single();
@@ -153,6 +183,7 @@ export class SupabaseDatabase implements DatabaseInterface {
       timestamp: data.timestamp,
       commitHash: data.commit_hash,
       commitMessage: data.commit_message,
+      repositoryUrl: data.repository_url,
     };
   }
 
@@ -171,6 +202,7 @@ export class SupabaseDatabase implements DatabaseInterface {
       size: release.size,
       commitHash: release.commit_hash,
       commitMessage: release.commit_message,
+      repositoryUrl: release.repository_url,
     }));
   }
 }

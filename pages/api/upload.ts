@@ -1,14 +1,17 @@
 import formidable from 'formidable';
 import fs from 'fs';
-import moment from 'moment';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 import { DatabaseFactory } from '../../apiUtils/database/DatabaseFactory';
 import { StorageFactory } from '../../apiUtils/storage/StorageFactory';
 
 import AdmZip from 'adm-zip';
+import { randomUUID } from 'crypto';
 import { ZipHelper } from '../../apiUtils/helpers/ZipHelper';
 import { HashHelper } from '../../apiUtils/helpers/HashHelper';
+import { BundlePatchCache } from '../../apiUtils/helpers/BundlePatchCache';
+import { ReleaseAssetCache } from '../../apiUtils/helpers/ReleaseAssetCache';
+import { RepositoryHelper } from '../../apiUtils/helpers/RepositoryHelper';
 
 export const config = {
   api: {
@@ -31,6 +34,7 @@ export default async function uploadHandler(req: NextApiRequest, res: NextApiRes
     const runtimeVersion = fields.runtimeVersion?.[0];
     const commitHash = fields.commitHash?.[0];
     const commitMessage = fields.commitMessage?.[0] || 'No message provided';
+    const repositoryUrl = RepositoryHelper.toBrowserUrl(fields.repositoryUrl?.[0]);
 
     if (!uploadKey || !file || !runtimeVersion || !commitHash) {
       res.status(400).json({ error: 'Missing upload key, file, runtime version or commit hash' });
@@ -42,30 +46,67 @@ export default async function uploadHandler(req: NextApiRequest, res: NextApiRes
       return;
     }
 
-    const storage = StorageFactory.getStorage();
-    const timestamp = moment().utc().format('YYYYMMDDHHmmss');
-    const updatePath = `updates/${runtimeVersion}`;
+    if (!repositoryUrl) {
+      res.status(400).json({ error: 'Missing or invalid repository URL' });
+      return;
+    }
 
-    // Store the zipped file as is
     const zipContent = fs.readFileSync(file.filepath);
     const zipFolder = new AdmZip(file.filepath);
     const metadataJsonFile = await ZipHelper.getFileFromZip(zipFolder, 'metadata.json');
 
     const updateHash = HashHelper.createHash(metadataJsonFile, 'sha256', 'hex');
     const updateId = HashHelper.convertSHA256HashToUUID(updateHash);
+    const database = DatabaseFactory.getDatabase();
+    let release = await database.getReleaseByUpdateId(runtimeVersion, updateId);
+    let created = false;
+    if (!release) {
+      try {
+        release = await database.createRelease({
+          path: `updates/${runtimeVersion}/${randomUUID()}.zip`,
+          runtimeVersion,
+          timestamp: new Date().toISOString(),
+          commitHash,
+          commitMessage,
+          updateId,
+          repositoryUrl,
+          status: 'uploading',
+        });
+        created = true;
+      } catch (error: any) {
+        if (error?.code !== '23505') throw error;
+        release = await database.getReleaseByUpdateId(runtimeVersion, updateId);
+        if (!release) throw error;
+      }
+    }
 
-    const path = await storage.uploadFile(`${updatePath}/${timestamp}.zip`, zipContent);
+    if (release.status === 'active' || release.status === 'inactive') {
+      res.status(200).json({ success: true, path: release.path, updateId });
+      return;
+    }
+    if (release.status === 'failed') {
+      if (!(await database.retryFailedRelease(release.id))) {
+        res.status(409).json({ error: 'Upload already in progress' });
+        return;
+      }
+    } else if (!created && !(await database.retryStaleUpload(release.id))) {
+      res.status(409).json({ error: 'Upload already in progress' });
+      return;
+    }
 
-    await DatabaseFactory.getDatabase().createRelease({
-      path,
-      runtimeVersion,
-      timestamp: moment().utc().toString(),
-      commitHash,
-      commitMessage,
-      updateId,
-    });
-
-    res.status(200).json({ success: true, path });
+    let bundlePatches;
+    try {
+      // Hash and unpack the assets now so the first phone gets them from the cache, and a bundle
+      // phones could not use fails here instead of going live.
+      const prepared = await ReleaseAssetCache.prepareFromZip(release.id, zipFolder);
+      await StorageFactory.getStorage().uploadFile(release.path, zipContent);
+      bundlePatches = await BundlePatchCache.prepareRelease(release, prepared);
+      await database.activateRelease(release.id);
+    } catch (error) {
+      await database.failRelease(release.id);
+      throw error;
+    }
+    res.status(200).json({ success: true, path: release.path, updateId, bundlePatches });
   } catch (error) {
     console.error('Upload error:', error);
     res.status(500).json({ error: 'Upload failed' });

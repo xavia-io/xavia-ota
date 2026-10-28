@@ -89,7 +89,7 @@ Check [this](./docs/laod_testing.md) on how to run load testing for your OTA ser
 
 3. Configure your environment variables in `.env.local`. The minimal required configuration is:
    ```env
-   HOST=http://localhost:3000
+   HOST=http://localhost:3001
    BLOB_STORAGE_TYPE=local
    DB_TYPE=postgres
    ADMIN_PASSWORD=your-admin-password
@@ -107,7 +107,15 @@ Check [this](./docs/laod_testing.md) on how to run load testing for your OTA ser
    npm run dev
    ```
 
-The server and admin dashboard will be available at `http://localhost:3000`.
+The server and admin dashboard will be available at `http://localhost:3001`. `npm run dev` starts a dedicated PostgreSQL container, waits for it to become healthy, applies the installation-tracking migration, and then starts Next.js. The local data is stored in a Docker volume, so it survives restarts.
+
+To stop the server, press Ctrl+C. To stop the database, run `make -f scripts/dev/Makefile db-stop`. To inspect the local database, run:
+
+```bash
+docker compose -f containers/database/docker-compose.yml exec xavia-postgres psql -U postgres -d releases_db
+```
+
+Use `GET http://localhost:3001/api/tracking/monthly` to confirm the tracking database is reachable. A fresh database returns `{"installations":[]}` until an installation ID returns on a later update request. No mobile build is needed for the installation ID handshake; Expo Updates carries the server-defined header. Existing deployments should apply [`containers/database/migrations/20260925_installation_tracking.sql`](./containers/database/migrations/20260925_installation_tracking.sql) before using the new tracking code.
 
 
 Refer to [Storage & Database Configuration](./docs/supportedStorageAlternatives.md) for more configuration options.
@@ -157,7 +165,7 @@ We use a simple rollback-forward mechanism. When a new update is published, it b
 
 If anything goes wrong with the active update, and you want to rollback to the inactive one, you can simply click a button in the admin dashboard. 
 
-What happens behind the scenes is that we copy the inactive update with a new timestamp and push it to the front of the queue of updates, effectively making it the new active update.
+What happens behind the scenes is that the chosen release becomes the active one again and gets a new publication: a fresh update ID with the rollback time as its `createdAt`. Phones only accept an update ID they have not seen with a newer time, so they receive the rolled-back bundle as a new update on their next check and run it on the next cold start. The existing archive is reused; nothing is copied, and the dashboard keeps one row per release with its rollback history underneath.
 
 ## Admin Dashboard
 

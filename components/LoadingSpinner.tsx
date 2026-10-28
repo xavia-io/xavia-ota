@@ -1,9 +1,14 @@
-import { Box, BoxProps, Spinner, SpinnerProps } from '@chakra-ui/react';
+import { Box, BoxProps } from '@chakra-ui/react';
+import Image from 'next/image';
 
-export default function LoadingSpinner(props: BoxProps & SpinnerProps) {
+export default function LoadingSpinner({ size = 100, ...props }: BoxProps & { size?: number }) {
   return (
-    <Box className="flex justify-center items-center w-full h-full" {...props}>
-      <Spinner size={props.size} {...props} />
+    <Box
+      role="status"
+      aria-label="Loading"
+      className="flex justify-center items-center w-full h-full"
+      {...props}>
+      <Image src="/go_loader.gif" width={size} height={size} alt="" unoptimized priority />
     </Box>
   );
 }

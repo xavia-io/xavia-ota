@@ -1,18 +1,88 @@
 import FormData from 'form-data';
+import { randomUUID } from 'crypto';
 
 import { NextApiRequest, NextApiResponse } from 'next';
-import { serializeDictionary } from 'structured-headers';
+import { parseList, serializeDictionary } from 'structured-headers';
 
 import { ConfigHelper } from '../../apiUtils/helpers/ConfigHelper';
 import { DictionaryHelper } from '../../apiUtils/helpers/DictionaryHelper';
 import { HashHelper } from '../../apiUtils/helpers/HashHelper';
+import {
+  PreparedAsset,
+  PreparedRelease,
+  ReleaseAssetCache,
+} from '../../apiUtils/helpers/ReleaseAssetCache';
 import { UpdateHelper, NoUpdateAvailableError } from '../../apiUtils/helpers/UpdateHelper';
-import { ZipHelper } from '../../apiUtils/helpers/ZipHelper';
 import { getLogger } from '../../apiUtils/logger';
 import { DatabaseFactory } from '../../apiUtils/database/DatabaseFactory';
-import moment from 'moment';
 
 const logger = getLogger('manifest');
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+// Update IDs are cut from a SHA-256 hash, so they carry no UUID version or variant bits.
+const UPDATE_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// expo-updates lists updates that threw before their first screen and were rolled back.
+function getRecentFailedUpdateIds(header: string | string[] | undefined): string[] {
+  if (typeof header !== 'string') return [];
+  try {
+    return parseList(header)
+      .map(([value]) => value)
+      .filter(
+        (value): value is string => typeof value === 'string' && UPDATE_ID_PATTERN.test(value)
+      )
+      .map((value) => value.toLowerCase());
+  } catch {
+    return [];
+  }
+}
+
+function getInstallationId(
+  req: NextApiRequest,
+  res: NextApiResponse
+): { id: string; confirmed: boolean } {
+  const header = req.headers['x-installation-id'];
+  const confirmed = typeof header === 'string' && UUID_PATTERN.test(header);
+  const id = confirmed ? header.toLowerCase() : randomUUID();
+  res.setHeader(
+    'expo-server-defined-headers',
+    serializeDictionary(new Map([['x-installation-id', [id, new Map()]]]))
+  );
+  return { id, confirmed };
+}
+
+async function trackInstallation(releaseId: string, platform: string, installationId: string) {
+  try {
+    await DatabaseFactory.getDatabase().createTracking({ releaseId, platform, installationId });
+  } catch (error) {
+    logger.error('Failed to track installation', { releaseId, error });
+  }
+}
+
+async function trackFailedLaunches(
+  runtimeVersion: string,
+  platform: string,
+  installationId: string,
+  updateIds: string[]
+) {
+  try {
+    await DatabaseFactory.getDatabase().recordFailedLaunches(
+      runtimeVersion,
+      platform,
+      installationId,
+      updateIds
+    );
+  } catch (error) {
+    logger.error('Failed to record failed launches', { runtimeVersion, error });
+  }
+}
+
+async function countManifestRequest(releaseId: string, platform: string) {
+  try {
+    await DatabaseFactory.getDatabase().recordManifestRequest(releaseId, platform);
+  } catch (error) {
+    logger.error('Failed to count manifest request', { releaseId, error });
+  }
+}
 
 export default async function manifestEndpoint(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -27,6 +97,8 @@ export default async function manifestEndpoint(req: NextApiRequest, res: NextApi
     protocolVersion: req.headers['expo-protocol-version'],
     apiVersion: req.headers['expo-api-version'],
     currentUpdateId: req.headers['expo-current-update-id'],
+    embeddedUpdateId: req.headers['expo-embedded-update-id'],
+    recentFailedUpdateIds: req.headers['expo-recent-failed-update-ids'],
   });
 
   const protocolVersionMaybeArray = req.headers['expo-protocol-version'];
@@ -58,63 +130,70 @@ export default async function manifestEndpoint(req: NextApiRequest, res: NextApi
     return;
   }
 
-  const database = DatabaseFactory.getDatabase();
-  const releaseRecord = await database.getLatestReleaseRecordForRuntimeVersion(runtimeVersion);
-
-  if (releaseRecord) {
-    const updateId = releaseRecord.updateId;
-
-    const currentUpdateId = req.headers['expo-current-update-id'];
-    if (currentUpdateId === updateId) {
-      logger.info('User is already running the latest release. Returning NoUpdateAvailable.', {
-        runtimeVersion,
-      });
-      await putNoUpdateAvailableInResponseAsync(req, res, protocolVersion);
-      return;
-    }
+  const installation = getInstallationId(req, res);
+  const failedUpdateIds = getRecentFailedUpdateIds(req.headers['expo-recent-failed-update-ids']);
+  if (installation.confirmed && failedUpdateIds.length > 0) {
+    await trackFailedLaunches(runtimeVersion, platform, installation.id, failedUpdateIds);
   }
 
-  let updateBundlePath: string;
-  try {
-    updateBundlePath = await UpdateHelper.getLatestUpdateBundlePathForRuntimeVersionAsync(
-      runtimeVersion
-    );
-  } catch (error: any) {
-    if (error instanceof NoUpdateAvailableError) {
-      logger.info('No update available for runtime version', { runtimeVersion });
-      await putNoUpdateAvailableInResponseAsync(req, res, protocolVersion);
-      return;
-    }
+  const database = DatabaseFactory.getDatabase();
+  const releaseRecord = await database.getLatestReleaseRecordForRuntimeVersion(runtimeVersion);
+  if (!releaseRecord) {
+    await putNoUpdateAvailableInResponseAsync(req, res, protocolVersion);
+    return;
+  }
+  const updateBundlePath = releaseRecord.path.replace(/\.zip$/, '');
+  // A rollback is served under its own update ID and time. Phones ignore an ID they already have and
+  // an update older than the one they run, so both must come from the latest publication.
+  let updateId = releaseRecord.servedUpdateId ?? releaseRecord.updateId;
+  if (!updateId) {
+    const metadata = await UpdateHelper.getMetadataAsync({ updateBundlePath, runtimeVersion });
+    updateId = HashHelper.convertSHA256HashToUUID(metadata.id);
+    await database.setReleaseUpdateId(releaseRecord.id, updateId);
+  }
+  const createdAt = releaseRecord.servedAt
+    ? new Date(releaseRecord.servedAt).toISOString()
+    : new Date().toISOString();
 
-    res.statusCode = 404;
-    res.json({
-      error: error.message,
+  // Only the exact served ID means up to date. A phone running an earlier publication of the same
+  // bundle may have a newer bad update downloaded for its next launch, so it still needs this one.
+  const currentUpdateId = req.headers['expo-current-update-id'];
+  if (currentUpdateId && updateId && currentUpdateId === updateId) {
+    logger.info('User is already running the latest release. Returning NoUpdateAvailable.', {
+      runtimeVersion,
     });
+    await putNoUpdateAvailableInResponseAsync(req, res, protocolVersion);
+    if (res.statusCode === 200) await countManifestRequest(releaseRecord.id, platform);
     return;
   }
 
-  const updateType = await getTypeOfUpdateAsync(updateBundlePath);
-
   try {
     try {
-      if (updateType === UpdateType.NORMAL_UPDATE) {
+      const prepared = await ReleaseAssetCache.getPreparedRelease(releaseRecord);
+      if (!prepared.isRollback) {
         logger.info('Found a normal update available.');
         await putUpdateInResponseAsync(
           req,
           res,
-          updateBundlePath,
+          prepared,
           runtimeVersion,
           platform,
-          protocolVersion
+          protocolVersion,
+          installation,
+          releaseRecord.id,
+          updateId,
+          createdAt
         );
-      } else if (updateType === UpdateType.ROLLBACK) {
+      } else {
         logger.info('Rollback is available.');
         await putRollBackInResponseAsync(req, res, updateBundlePath, protocolVersion);
+        if (res.statusCode === 200) await countManifestRequest(releaseRecord.id, platform);
       }
     } catch (maybeNoUpdateAvailableError) {
       if (maybeNoUpdateAvailableError instanceof NoUpdateAvailableError) {
         logger.info('psych!! User already running latest available update');
         await putNoUpdateAvailableInResponseAsync(req, res, protocolVersion);
+        if (res.statusCode === 200) await countManifestRequest(releaseRecord.id, platform);
         return;
       }
       throw maybeNoUpdateAvailableError;
@@ -126,70 +205,61 @@ export default async function manifestEndpoint(req: NextApiRequest, res: NextApi
   }
 }
 
-enum UpdateType {
-  NORMAL_UPDATE,
-  ROLLBACK,
-}
-
-async function getTypeOfUpdateAsync(updateBundlePath: string): Promise<UpdateType> {
-  const zip = await ZipHelper.getZipFromStorage(updateBundlePath);
-  const hasRollback = zip.getEntry('rollback') !== null;
-  return hasRollback ? UpdateType.ROLLBACK : UpdateType.NORMAL_UPDATE;
+function toManifestAsset(
+  asset: PreparedAsset,
+  runtimeVersion: string,
+  updateId: string,
+  platform: string
+) {
+  return {
+    hash: asset.hash,
+    key: asset.key,
+    fileExtension: asset.fileExtension,
+    contentType: asset.contentType,
+    url: `${process.env.HOST}/api/assets?asset=${encodeURIComponent(
+      asset.path
+    )}&runtimeVersion=${encodeURIComponent(runtimeVersion)}&updateId=${encodeURIComponent(
+      updateId
+    )}&platform=${platform}`,
+  };
 }
 
 async function putUpdateInResponseAsync(
   req: NextApiRequest,
   res: NextApiResponse,
-  updateBundlePath: string,
+  prepared: PreparedRelease,
   runtimeVersion: string,
   platform: string,
-  protocolVersion: number
+  protocolVersion: number,
+  installation: { id: string; confirmed: boolean },
+  releaseId: string,
+  updateId: string,
+  createdAt: string
 ): Promise<void> {
   const currentUpdateId = req.headers['expo-current-update-id'];
-  const { metadataJson, createdAt, id } = await UpdateHelper.getMetadataAsync({
-    updateBundlePath,
-    runtimeVersion,
-  });
 
   // NoUpdateAvailable directive only supported on protocol version 1
   // for protocol version 0, serve most recent update as normal
-  if (currentUpdateId === HashHelper.convertSHA256HashToUUID(id) && protocolVersion === 1) {
+  if (currentUpdateId === updateId && protocolVersion === 1) {
     logger.info('returning NoUpdateAvailable to client');
     throw new NoUpdateAvailableError();
   }
 
-  const expoConfig = await ConfigHelper.getExpoConfigAsync({
-    updateBundlePath,
-    runtimeVersion,
-  });
-  const platformSpecificMetadata = metadataJson.fileMetadata[platform];
+  const platformAssets = prepared.platforms[platform];
+  if (!platformAssets) {
+    throw new Error(`No ${platform} bundle in update ${updateId}`);
+  }
   const manifest = {
-    id: HashHelper.convertSHA256HashToUUID(id),
+    id: updateId,
     createdAt,
     runtimeVersion,
-    assets: await Promise.all(
-      (platformSpecificMetadata.assets as any[]).map((asset: any) =>
-        UpdateHelper.getAssetMetadataAsync({
-          updateBundlePath,
-          filePath: asset.path,
-          ext: asset.ext,
-          runtimeVersion,
-          platform,
-          isLaunchAsset: false,
-        })
-      )
+    assets: platformAssets.assets.map((asset) =>
+      toManifestAsset(asset, runtimeVersion, updateId, platform)
     ),
-    launchAsset: await UpdateHelper.getAssetMetadataAsync({
-      updateBundlePath,
-      filePath: platformSpecificMetadata.bundle,
-      isLaunchAsset: true,
-      runtimeVersion,
-      platform,
-      ext: null,
-    }),
+    launchAsset: toManifestAsset(platformAssets.launchAsset, runtimeVersion, updateId, platform),
     metadata: {},
     extra: {
-      expoClient: expoConfig,
+      expoClient: prepared.expoConfig,
     },
   };
 
@@ -216,7 +286,7 @@ async function putUpdateInResponseAsync(
   const assetRequestHeaders: { [key: string]: object } = {};
   [...manifest.assets, manifest.launchAsset].forEach((asset) => {
     assetRequestHeaders[asset.key] = {
-      'test-header': 'test-header-value',
+      'x-installation-id': installation.id,
     };
   });
 
@@ -240,16 +310,14 @@ async function putUpdateInResponseAsync(
   res.write(form.getBuffer());
   res.end();
 
-  const database = DatabaseFactory.getDatabase();
-  const release = await database.getReleaseByPath(updateBundlePath + '.zip');
+  await countManifestRequest(releaseId, platform);
 
-  if (release) {
-    logger.info(`Tracking download for release.`, { releaseId: release.id });
-    await database.createTracking({
-      platform,
-      releaseId: release.id,
-      downloadTimestamp: moment().utc().toISOString(),
-    });
+  if (installation.confirmed) {
+    try {
+      await trackInstallation(releaseId, platform, installation.id);
+    } catch (error) {
+      logger.error('Failed to look up release for installation tracking', { error });
+    }
   }
 }
 

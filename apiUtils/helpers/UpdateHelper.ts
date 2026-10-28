@@ -1,68 +1,27 @@
-import mime from 'mime';
+import moment from 'moment';
 
 import { HashHelper } from './HashHelper';
 import { ZipHelper } from './ZipHelper';
-import { StorageFactory } from '../storage/StorageFactory';
+import { DatabaseFactory } from '../database/DatabaseFactory';
 
 export class NoUpdateAvailableError extends Error {}
-export type GetAssetMetadataArg =
-  | {
-      updateBundlePath: string;
-      filePath: string;
-      ext: null;
-      isLaunchAsset: true;
-      runtimeVersion: string;
-      platform: string;
-    }
-  | {
-      updateBundlePath: string;
-      filePath: string;
-      ext: string;
-      isLaunchAsset: false;
-      runtimeVersion: string;
-      platform: string;
-    };
-
 export class UpdateHelper {
+  // Bundles are named by their UTC publish time (YYYYMMDDHHmmss.zip), and that name is what
+  // decides which update devices receive. File creation times are unreliable (Linux volumes
+  // often report 1970), so prefer this.
+  static getPublishedAtFromFileName(fileName: string): string | null {
+    const parsed = moment.utc(fileName.replace(/\.zip$/, ''), 'YYYYMMDDHHmmss', true);
+    return parsed.isValid() ? parsed.toISOString() : null;
+  }
+
   static async getLatestUpdateBundlePathForRuntimeVersionAsync(
     runtimeVersion: string
   ): Promise<string> {
-    const storage = StorageFactory.getStorage();
-    const updatesDirectoryForRuntimeVersion = `updates/${runtimeVersion}`;
-
-    if (!(await storage.fileExists(updatesDirectoryForRuntimeVersion))) {
-      throw new NoUpdateAvailableError();
-    }
-
-    const zipFiles = (await storage.listFiles(updatesDirectoryForRuntimeVersion))
-      .filter((file) => file.name.endsWith('.zip'))
-      .sort((a, b) => parseInt(b.name.split('.')[0], 10) - parseInt(a.name.split('.')[0], 10));
-
-    if (!zipFiles.length) {
-      throw new Error(`No updates found for runtime version: ${runtimeVersion}`);
-    }
-
-    return `${updatesDirectoryForRuntimeVersion}/${zipFiles[0].name.replace('.zip', '')}`;
-  }
-
-  static async getAssetMetadataAsync(arg: GetAssetMetadataArg) {
-    const zip = await ZipHelper.getZipFromStorage(arg.updateBundlePath);
-    const asset = await ZipHelper.getFileFromZip(zip, arg.filePath);
-
-    const assetHash = HashHelper.getBase64URLEncoding(
-      HashHelper.createHash(asset, 'sha256', 'base64')
+    const release = await DatabaseFactory.getDatabase().getLatestReleaseRecordForRuntimeVersion(
+      runtimeVersion
     );
-    const key = HashHelper.createHash(asset, 'md5', 'hex');
-    const keyExtensionSuffix = arg.isLaunchAsset ? 'bundle' : arg.ext;
-    const contentType = arg.isLaunchAsset ? 'application/javascript' : mime.getType(arg.ext);
-
-    return {
-      hash: assetHash,
-      key,
-      fileExtension: `.${keyExtensionSuffix}`,
-      contentType,
-      url: `${process.env.HOST}/api/assets?asset=${arg.filePath}&runtimeVersion=${arg.runtimeVersion}&platform=${arg.platform}`,
-    };
+    if (!release) throw new NoUpdateAvailableError();
+    return release.path.replace(/\.zip$/, '');
   }
 
   static async getMetadataAsync({

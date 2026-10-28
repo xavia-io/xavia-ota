@@ -50,7 +50,9 @@ const logger = winston.createLogger({
       const { timestamp, level, message: logMessage, ...metadata } = info;
       const { loggerName } = metadata.metadata as { loggerName: string };
 
-      const msg = `[${moment().utc().format('YYYY-MM-DD HH:mm:ss')}] [${level}] ${padLoggerName(
+      const msg = `[${moment()
+        .utcOffset(60)
+        .format('YYYY-MM-DD HH:mm:ss')}] [${level}] ${padLoggerName(
         '[' + loggerName + ']',
         60
       )} ${logMessage} ${formatMeta(metadata)}`;

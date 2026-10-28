@@ -18,6 +18,10 @@ export class ZipHelper {
     if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
       return cached.zip;
     }
+    // Each entry holds a whole release zip in memory, so drop expired ones instead of keeping them.
+    this.zipCache.forEach((entry, path) => {
+      if (Date.now() - entry.timestamp >= this.CACHE_DURATION) this.zipCache.delete(path);
+    });
 
     const zipBuffer = await storage.downloadFile(`${updateBundlePath}.zip`);
     const zip = new AdmZip(zipBuffer);

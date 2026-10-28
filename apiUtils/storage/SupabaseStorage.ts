@@ -69,8 +69,8 @@ export class SupabaseStorage implements StorageInterface {
     if (error) throw error;
     return data.map((file) => ({
       name: file.name,
-      updated_at: file.updated_at,
-      created_at: file.created_at,
+      updated_at: file.updated_at ?? '',
+      created_at: file.created_at ?? '',
       metadata: file.metadata as { size: number; mimetype: string },
     }));
   }
