@@ -28,6 +28,7 @@ import { SlRefresh } from 'react-icons/sl';
 import Layout from '../components/Layout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { showToast } from '../components/toast';
+import { adminFetch } from '../components/adminFetch';
 
 interface Release {
   path: string;
@@ -52,7 +53,7 @@ export default function ReleasesPage() {
 
   const fetchReleases = async () => {
     try {
-      const response = await fetch('/api/releases');
+      const response = await adminFetch('/api/releases');
       if (!response.ok) {
         throw new Error('Failed to fetch releases');
       }
@@ -177,7 +178,7 @@ export default function ReleasesPage() {
                                       <Button
                                         colorScheme="red"
                                         onClick={async () => {
-                                          const response = await fetch('/api/rollback', {
+                                          const response = await adminFetch('/api/rollback', {
                                             method: 'POST',
                                             headers: {
                                               'Content-Type': 'application/json',

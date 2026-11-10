@@ -4,6 +4,7 @@ import ProtectedRoute from '../components/ProtectedRoute';
 import { TrackingMetrics } from '../apiUtils/database/DatabaseInterface';
 import { useEffect, useState } from 'react';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { adminFetch } from '../components/adminFetch';
 import { AllTrackingResponse } from './api/tracking/all';
 
 export default function Dashboard() {
@@ -14,7 +15,7 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const fetchData = async () => {
     try {
-      const response = await fetch('/api/tracking/all');
+      const response = await adminFetch('/api/tracking/all');
       const data = (await response.json()) as AllTrackingResponse;
 
       setTotalDownloaded(data.trackings.reduce((acc, curr) => acc + curr.count, 0));

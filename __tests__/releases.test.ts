@@ -7,13 +7,15 @@ import releasesHandler from '../pages/api/releases';
 jest.mock('../apiUtils/database/DatabaseFactory');
 jest.mock('../apiUtils/storage/StorageFactory');
 
+const adminHeaders = { authorization: `Bearer ${process.env.ADMIN_PASSWORD}` };
+
 describe('Releases API', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('should return 405 for non-GET requests', async () => {
-    const { req, res } = createMocks({ method: 'POST' });
+    const { req, res } = createMocks({ method: 'POST', headers: adminHeaders });
     await releasesHandler(req, res);
     expect(res._getStatusCode()).toBe(405);
     expect(JSON.parse(res._getData())).toMatchSnapshot();
@@ -43,7 +45,7 @@ describe('Releases API', () => {
     (StorageFactory.getStorage as jest.Mock).mockReturnValue(mockStorage);
     (DatabaseFactory.getDatabase as jest.Mock).mockReturnValue(mockDatabase);
 
-    const { req, res } = createMocks({ method: 'GET' });
+    const { req, res } = createMocks({ method: 'GET', headers: adminHeaders });
     await releasesHandler(req, res);
 
     expect(res._getStatusCode()).toBe(200);
@@ -57,7 +59,7 @@ describe('Releases API', () => {
 
     (StorageFactory.getStorage as jest.Mock).mockReturnValue(mockStorage);
 
-    const { req, res } = createMocks({ method: 'GET' });
+    const { req, res } = createMocks({ method: 'GET', headers: adminHeaders });
     await releasesHandler(req, res);
 
     expect(res._getStatusCode()).toBe(500);

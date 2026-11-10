@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { DatabaseFactory } from '../../../apiUtils/database/DatabaseFactory';
 import { getLogger } from '../../../apiUtils/logger';
 import { TrackingMetrics } from '../../../apiUtils/database/DatabaseInterface';
+import { withAdminAuth } from '../../../apiUtils/helpers/AdminAuthHelper';
 
 const logger = getLogger('allTrackingHandler');
 
@@ -10,7 +11,7 @@ export interface AllTrackingResponse {
   totalReleases: number;
 }
 
-export default async function allTrackingHandler(req: NextApiRequest, res: NextApiResponse) {
+async function allTrackingHandler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
@@ -28,3 +29,5 @@ export default async function allTrackingHandler(req: NextApiRequest, res: NextA
     res.status(500).json({ error: 'Failed to fetch tracking data' });
   }
 }
+
+export default withAdminAuth(allTrackingHandler);

@@ -11,9 +11,13 @@ export default function Layout({ children, ...props }: { children: React.ReactNo
     { name: 'Releases', path: '/releases', icon: <FaTags fontSize="1.25rem" /> },
   ];
 
-  const handleLogout = () => {
-    localStorage.removeItem('isAuthenticated');
-    router.push('/');
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' });
+    } finally {
+      localStorage.removeItem('isAuthenticated');
+      router.push('/');
+    }
   };
 
   return (
