@@ -7,13 +7,15 @@ import rollbackHandler from '../pages/api/rollback';
 jest.mock('../apiUtils/database/DatabaseFactory');
 jest.mock('../apiUtils/storage/StorageFactory');
 
+const adminHeaders = { authorization: `Bearer ${process.env.ADMIN_PASSWORD}` };
+
 describe('Rollback API', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('should return 405 for non-POST requests', async () => {
-    const { req, res } = createMocks({ method: 'GET' });
+    const { req, res } = createMocks({ method: 'GET', headers: adminHeaders });
     await rollbackHandler(req, res);
     expect(res._getStatusCode()).toBe(405);
     expect(JSON.parse(res._getData())).toMatchSnapshot();
@@ -22,6 +24,7 @@ describe('Rollback API', () => {
   it('should return 400 for missing required fields', async () => {
     const { req, res } = createMocks({
       method: 'POST',
+      headers: adminHeaders,
       body: {},
     });
     await rollbackHandler(req, res);
@@ -45,6 +48,7 @@ describe('Rollback API', () => {
 
     const { req, res } = createMocks({
       method: 'POST',
+      headers: adminHeaders,
       body: {
         path: 'updates/1.0.0/old.zip',
         runtimeVersion: '1.0.0',

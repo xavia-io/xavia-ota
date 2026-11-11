@@ -2,8 +2,9 @@ import { NextApiRequest, NextApiResponse } from 'next';
 
 import { DatabaseFactory } from '../../apiUtils/database/DatabaseFactory';
 import { StorageFactory } from '../../apiUtils/storage/StorageFactory';
+import { withAdminAuth } from '../../apiUtils/helpers/AdminAuthHelper';
 
-export default async function releasesHandler(req: NextApiRequest, res: NextApiResponse) {
+async function releasesHandler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
@@ -41,3 +42,5 @@ export default async function releasesHandler(req: NextApiRequest, res: NextApiR
     res.status(500).json({ error: 'Failed to fetch releases' });
   }
 }
+
+export default withAdminAuth(releasesHandler);

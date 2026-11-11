@@ -1,10 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { DatabaseFactory } from '../../../apiUtils/database/DatabaseFactory';
 import { getLogger } from '../../../apiUtils/logger';
+import { withAdminAuth } from '../../../apiUtils/helpers/AdminAuthHelper';
 
 const logger = getLogger('trackingByReleaseHandler');
 
-export default async function trackingByReleaseHandler(req: NextApiRequest, res: NextApiResponse) {
+async function trackingByReleaseHandler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
@@ -29,3 +30,5 @@ export default async function trackingByReleaseHandler(req: NextApiRequest, res:
     res.status(500).json({ error: 'Failed to fetch tracking data' });
   }
 }
+
+export default withAdminAuth(trackingByReleaseHandler);
